@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Satış</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#">Uygulama</a>
+    <div class="collapse navbar-collapse">
+      <ul class="navbar-nav">
+        <li class="nav-item"><a class="nav-link" href="/sales">Satış</a></li>
+        <li class="nav-item"><a class="nav-link" href="/products">Ürünler</a></li>
+        <li class="nav-item"><a class="nav-link" href="/debts">Veresiye</a></li>
+        <li class="nav-item"><a class="nav-link" href="/transactions">İşlem Kaydı</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container mt-4">
+  <!-- Satış Ekleme Formu -->
+  <h2>Yeni Satış</h2>
+  <form th:action="@{/sales}" method="post" class="row g-3">
+    <!-- Barkod Girişi -->
+    <div class="col-md-4">
+      <label for="barcode" class="form-label">Barkod</label>
+      <input type="text" class="form-control" id="barcode" name="barcode" placeholder="Barkod" required>
+    </div>
+
+    <!-- Miktar Girişi -->
+    <div class="col-md-4">
+      <label for="quantity" class="form-label">Miktar</label>
+      <input type="number" class="form-control" id="quantity" name="quantity" placeholder="Miktar" required>
+    </div>
+
+    <!-- Ürün Ekle Butonu -->
+    <div class="col-md-4 align-self-end">
+      <button type="submit" class="btn btn-primary">Ürün Ekle</button>
+    </div>
+  </form>
+
+  <hr>
+
+  <!-- Satış Detayları -->
+  <h3>Sepet</h3>
+  <table class="table table-bordered">
+    <thead>
+    <tr>
+      <th>#</th>
+      <th>Ürün Adı</th>
+      <th>Barkod</th>
+      <th>Miktar</th>
+      <th>Birim Fiyat</th>
+      <th>Ara Toplam</th>
+      <th>Sil</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="item, iterStat : ${saleItems}">
+      <td th:text="${iterStat.count}"></td>
+      <td th:text="${item.product.name}"></td>
+      <td th:text="${item.product.barcode}"></td>
+      <td th:text="${item.quantity}"></td>
+      <td th:text="${item.unitPrice} + ' TL'"></td>
+      <td th:text="${item.subtotal} + ' TL'"></td>
+      <td>
+        <a th:href="@{/sales/item/{id}(id=${item.id})}" class="btn btn-danger btn-sm">Sil</a>
+      </td>
+    </tr>
+    </tbody>
+  </table>
+
+  <!-- Toplam Tutar -->
+  <h4>Toplam: <span th:text="${total} + ' TL'"></span></h4>
+
+  <!-- Satışı Tamamla -->
+  <form th:action="@{/sales/complete}" method="post">
+    <button type="submit" class="btn btn-success">Satışı Tamamla</button>
+    <a href="/sales/reset" class="btn btn-secondary">Sepeti Temizle</a>
+  </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
