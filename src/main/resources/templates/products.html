@@ -25,16 +25,17 @@
     <!-- Ürün Ekleme Formu -->
     <h2>Yeni Ürün Ekle</h2>
     <form th:action="@{/products}" method="post" class="row g-3">
-        <!-- Ürün Adı -->
-        <div class="col-md-6">
-            <label for="name" class="form-label">Ürün Adı</label>
-            <input type="text" class="form-control" id="name" name="name" placeholder="Ürün adı girin" required>
-        </div>
 
         <!-- Barkod -->
         <div class="col-md-6">
             <label for="barcode" class="form-label">Barkod</label>
-            <input type="text" class="form-control" id="barcode" name="barcode" placeholder="Barkod girin" required>
+            <input type="text" class="form-control" id="barcode" name="barcode" placeholder="Barkod girin" required autofocus>
+        </div>
+
+        <!-- Ürün Adı -->
+        <div class="col-md-6">
+            <label for="name" class="form-label">Ürün Adı</label>
+            <input type="text" class="form-control" id="name" name="name" placeholder="Ürün adı girin" required>
         </div>
 
         <!-- Stok -->
@@ -63,8 +64,8 @@
         <thead>
         <tr>
             <th>#</th>
-            <th>Ürün Adı</th>
             <th>Barkod</th>
+            <th>Ürün Adı</th>
             <th>Stok</th>
             <th>Fiyat</th>
         </tr>
@@ -72,8 +73,8 @@
         <tbody>
         <tr th:each="product, iterStat : ${products}">
             <td th:text="${iterStat.count}"></td>
-            <td th:text="${product.name}"></td>
             <td th:text="${product.barcode}"></td>
+            <td th:text="${product.name}"></td>
             <td th:text="${product.stock}"></td>
             <td th:text="${product.price} + ' TL'"></td>
         </tr>
