@@ -51,23 +51,45 @@ public class SalesController {
             return Constants.SALES;
         }
 
-        // Stok kontrolü
-        if (product.getStock() < quantity) {
-            model.addAttribute("error", "Yetersiz stok!");
-            return Constants.SALES;
+        // Sepette aynı ürünü arıyoruz
+        SaleItem existingItem = saleItems.stream()
+                .filter(item -> item.getProduct().getBarcode().equals(barcode))
+                .findFirst()
+                .orElse(null);
+
+        if (existingItem != null) {
+            // Sepette ürün zaten varsa, toplam miktarın stoğu aşmadığını kontrol et
+            int newQuantity = existingItem.getQuantity() + quantity;
+            if (newQuantity > product.getStock()) {
+                model.addAttribute("error", "Yetersiz stok! En fazla " + (product.getStock() - existingItem.getQuantity()) + " adet ekleyebilirsiniz.");
+                model.addAttribute("saleItems", saleItems);
+                model.addAttribute("total", total);
+                return Constants.SALES;
+            }
+
+            // Miktarı ve ara toplamı güncelle
+            existingItem.setQuantity(newQuantity);
+            existingItem.setSubtotal(existingItem.getUnitPrice() * newQuantity);
+        } else {
+            // Yeni bir ürün ekleniyorsa, stok kontrolü yap
+            if (quantity > product.getStock()) {
+                model.addAttribute("error", "Yetersiz stok! En fazla " + product.getStock() + " adet ekleyebilirsiniz.");
+                model.addAttribute("saleItems", saleItems);
+                model.addAttribute("total", total);
+                return Constants.SALES;
+            }
+
+            // Ürün yeni ise sepete ekle
+            SaleItem saleItem = new SaleItem();
+            saleItem.setProduct(product);
+            saleItem.setQuantity(quantity);
+            saleItem.setUnitPrice(product.getPrice());
+            saleItem.setSubtotal(product.getPrice() * quantity);
+            saleItems.add(saleItem);
         }
 
-        // SaleItem oluştur ve sepete ekle
-        SaleItem saleItem = new SaleItem();
-        saleItem.setProduct(product);
-        saleItem.setQuantity(quantity);
-        saleItem.setUnitPrice(product.getPrice());
-        saleItem.setSubtotal(product.getPrice() * quantity);
-
-        saleItems.add(saleItem);
-
         // Toplam tutarı güncelle
-        total += saleItem.getSubtotal();
+        total = saleItems.stream().mapToDouble(SaleItem::getSubtotal).sum();
 
         // Görünümü güncelle
         model.addAttribute("saleItems", saleItems);
@@ -75,21 +97,53 @@ public class SalesController {
         return Constants.SALES;
     }
 
-    // Sepetten Ürün Silme
-    @GetMapping("/item/{id}")
-    public String removeItemFromSale(@PathVariable int id, Model model) {
-        // Listeden ilgili ürünü çıkar
-        if (id > 0 && id <= saleItems.size()) {
-            SaleItem saleItem = saleItems.get(id - 1);
-            total -= saleItem.getSubtotal();
-            saleItems.remove(id - 1);
+
+
+    @PostMapping("/updateQuantity")
+    public String updateQuantity(@RequestParam String barcode, @RequestParam int quantity, Model model) {
+        SaleItem item = saleItems.stream()
+                .filter(saleItem -> saleItem.getProduct().getBarcode().equals(barcode))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Ürün bulunamadı: " + barcode));
+
+        // Stok kontrolü
+        Product product = item.getProduct();
+        if (product.getStock() < quantity) {
+            model.addAttribute("error", "Yetersiz stok! En fazla " + product.getStock() + " adet ekleyebilirsiniz.");
+            model.addAttribute("saleItems", saleItems);
+            model.addAttribute("total", total);
+            return Constants.SALES;
         }
+
+        // Yeni miktarı ve ara toplamı güncelle
+        item.setQuantity(quantity);
+        item.setSubtotal(item.getUnitPrice() * quantity);
+
+        // Toplam tutarı yeniden hesapla
+        double total = saleItems.stream().mapToDouble(SaleItem::getSubtotal).sum();
+        model.addAttribute("saleItems", saleItems);
+        model.addAttribute("total", total);
+
+        return "sales";
+    }
+
+    @GetMapping("/item/{barcode}")
+    public String removeItemFromSale(@PathVariable String barcode, Model model) {
+        // Listeden ilgili ürünü bul ve çıkar
+        SaleItem saleItem = saleItems.stream()
+                .filter(item -> item.getProduct().getBarcode().equals(barcode))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Ürün bulunamadı: " + barcode));
+
+        total -= saleItem.getSubtotal(); // Toplam tutarı güncelle
+        saleItems.remove(saleItem); // Ürünü listeden çıkar
 
         // Görünümü güncelle
         model.addAttribute("saleItems", saleItems);
         model.addAttribute("total", total);
         return "redirect:/sales";
     }
+
 
     // Satışı Tamamlama
     @PostMapping("/complete")
