@@ -1,0 +1,28 @@
+body {
+    background-color: #151F31;
+    height: 100vh; /* Tam ekran yüksekliği */
+}
+
+/* Giriş formu stilini özelleştirme */
+.login-container {
+    background-color: white;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.logo {
+    display: block;
+    margin: 0 auto 20px;
+    width: 150px;
+    height: auto;
+}
+
+.login-container h2 {
+    margin-bottom: 20px;
+}
+
+/* Uyarı mesajları */
+.alert {
+    margin-top: 20px;
+}

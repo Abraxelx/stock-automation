@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Veresiye İşlemleri</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div th:insert="~{/fragments/navbar :: navbar}"></div>
+
+<div class="container mt-5">
+    <h2 class="text-center">Veresiye İşlemleri</h2>
+
+    <!-- Borç Girişi Formu -->
+    <h4>Yeni Borç Girişi</h4>
+    <form action="/debts/add" method="post" class="mb-4">
+        <div class="mb-3">
+            <label for="customerId" class="form-label">Müşteri Seç</label>
+            <select id="customerId" name="customerId" class="form-control" required>
+                <option th:each="customer : ${customers}"
+                        th:value="${customer.id}"
+                        th:text="${customer.firstName+ ' ' + customer.lastName}"></option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="productId" class="form-label">Ürün Seç</label>
+            <select id="productId" name="productId" class="form-control">
+                <option value="" disabled selected>Ürün Borç verdiyseniz ürün seçin</option>
+                <option th:each="product : ${products}"
+                        th:value="${product.id}"
+                        th:text="${product.name}"></option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="amount" class="form-label">Borç Miktarı (TL)</label>
+            <input type="number" id="amount" name="amount" class="form-control" required/>
+        </div>
+        <div class="mb-3">
+            <label for="dueDate" class="form-label">Vade Tarihi</label>
+            <input type="datetime-local" id="dueDate" name="dueDate" class="form-control" required/>
+        </div>
+        <button type="submit" class="btn btn-primary">Borç Ekle</button>
+    </form>
+
+    <!-- Borç Arama -->
+    <form action="/debts/search" method="get" class="mb-4">
+        <input type="text" name="firstName" placeholder="Müşteri adı ile ara" class="form-control" />
+        <button type="submit" class="btn btn-primary mt-2">Ara</button>
+    </form>
+
+    <!-- Borç Listeleme -->
+    <table class="table table-bordered table-striped">
+        <thead class="table-dark">
+        <tr>
+            <th>#</th>
+            <th>Müşteri Adı</th>
+            <th>Ürün Adı</th>
+            <th>Borç Miktarı</th>
+            <th>Vade Tarihi</th>
+            <th>Ödeme Durumu</th>
+            <th>İşlemler</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="debt : ${debts}">
+            <td th:text="${debt.id}"></td>
+            <td>
+                <span th:if="${debt.customer != null}" th:text="${debt.customer.firstName+ ' ' + debt.customer.lastName}"></span>
+                <span th:if="${debt.customer == null}">Veritabanında hiç müşteri yok</span>
+            </td>
+            <td>
+                <span th:if="${debt.product != null}" th:text="${debt.product.name}"></span>
+                <span th:if="${debt.product == null}">Ürün Bilgisi Yok</span>
+            </td>
+            <td th:text="${debt.amount + ' TL'}"></td>
+            <td th:text="${#temporals.format(debt.dueDate, 'dd MMMM yyyy EEEE - HH:mm ')}"></td>
+            <td th:text="${debt.isPaid ? 'Ödendi' : 'Ödenmedi'}"></td>
+            <td>
+                <form th:action="@{/debts/pay/{id}(id=${debt.id})}" method="post">
+                    <button type="submit" th:if="${!debt.isPaid}" class="btn btn-success">Ödeme Yap</button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

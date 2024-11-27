@@ -10,4 +10,5 @@ import java.util.List;
 public interface ProductRepository extends JpaRepository<Product, Long> {
     Product findByBarcode(String barcode);
     List<Product> findAllByOrderByIdDesc();
+    List<Product> findByNameContainingIgnoreCase(String name);
 }

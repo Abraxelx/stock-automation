@@ -4,9 +4,12 @@ import com.halilsahin.stockautomation.constants.Constants;
 import com.halilsahin.stockautomation.entity.Product;
 import com.halilsahin.stockautomation.entity.Sale;
 import com.halilsahin.stockautomation.entity.SaleItem;
+import com.halilsahin.stockautomation.entity.Transaction;
+import com.halilsahin.stockautomation.enums.TransactionType;
 import com.halilsahin.stockautomation.repository.ProductRepository;
 import com.halilsahin.stockautomation.repository.SaleItemRepository;
 import com.halilsahin.stockautomation.repository.SaleRepository;
+import com.halilsahin.stockautomation.repository.TransactionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -22,15 +25,17 @@ public class SalesController {
     private final ProductRepository productRepository;
     private final SaleRepository saleRepository;
     private final SaleItemRepository saleItemRepository;
+    private final TransactionRepository transactionRepository;
 
     private List<SaleItem> saleItems = new ArrayList<>(); // Geçici satış listesi
     private double total = 0; // Toplam tutar
 
     @Autowired
-    public SalesController(ProductRepository productRepository, SaleRepository saleRepository, SaleItemRepository saleItemRepository) {
+    public SalesController(ProductRepository productRepository, SaleRepository saleRepository, SaleItemRepository saleItemRepository, TransactionRepository transactionRepository) {
         this.productRepository = productRepository;
         this.saleRepository = saleRepository;
         this.saleItemRepository = saleItemRepository;
+        this.transactionRepository = transactionRepository;
     }
 
     // Satış Sayfasını Görüntüleme
@@ -162,6 +167,14 @@ public class SalesController {
             // Stok güncelle
             Product product = saleItem.getProduct();
             product.setStock(product.getStock() - saleItem.getQuantity());
+
+            Transaction transaction = new Transaction();
+            transaction.setTransactionType(TransactionType.SALE);
+            transaction.setAmount(total);
+            transaction.setRelatedEntity("SALE");
+            transaction.setDate(LocalDateTime.now());
+            transaction.setDescription(saleItem.getQuantity() + ": Adet " + saleItem.getProduct().getName()+ "satıldı");
+            transactionRepository.save(transaction);
             productRepository.save(product);
         }
 
