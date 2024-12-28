@@ -1,8 +1,8 @@
 package com.halilsahin.stockautomation.controller;
 
+import com.halilsahin.stockautomation.constants.Constants;
 import com.halilsahin.stockautomation.entity.Customer;
 import com.halilsahin.stockautomation.entity.Debt;
-import com.halilsahin.stockautomation.entity.Product;
 import com.halilsahin.stockautomation.entity.Transaction;
 import com.halilsahin.stockautomation.enums.TransactionType;
 import com.halilsahin.stockautomation.repository.TransactionRepository;
@@ -58,35 +58,34 @@ public class DebtController {
         transactionRepository.save(transaction);
         debtService.addDebt(debt);
 
-        model.addAttribute("debts", debtService.getAllDebts());
+        model.addAttribute(Constants.DEBTS, debtService.getAllDebts());
         model.addAttribute("customers", customerService.getAllCustomers());
-        model.addAttribute("products", productService.findAll());// Ürünleri de model'e ekleyelim
-        return "debts";
+        model.addAttribute(Constants.PRODUCTS, productService.findAll());// Ürünleri de model'e ekleyelim
+        return Constants.DEBTS;
     }
 
     // Borçları listeleme
     @GetMapping
     public String getAllDebts(Model model) {
-        model.addAttribute("debts", debtService.getAllDebts());
+        model.addAttribute(Constants.DEBTS, debtService.getAllDebts());
         model.addAttribute("customers", customerService.getAllCustomers());
-        model.addAttribute("products", productService.findAll());  // Ürünleri de model'e ekleyelim
-        return "debts";
+        model.addAttribute(Constants.PRODUCTS, productService.findAll());  // Ürünleri de model'e ekleyelim
+        return Constants.DEBTS;
     }
 
     // Müşteriye göre borç arama
     @GetMapping("/search")
     public String searchDebts(@RequestParam String customerName, Model model) {
-        model.addAttribute("debts", debtService.findDebtsByCustomerName(customerName));
-        model.addAttribute("products", productService.findAll());  // Ürünleri de model'e ekleyelim
-        return "debts";
+        model.addAttribute(Constants.DEBTS, debtService.findDebtsByCustomerName(customerName));
+        model.addAttribute(Constants.PRODUCTS, productService.findAll());  // Ürünleri de model'e ekleyelim
+        return Constants.DEBTS;
     }
 
     // Ödeme işlemi
     @PostMapping("/pay/{id}")
     public String payDebt(@PathVariable Long id, Model model) {
-        Debt debt = debtService.markAsPaid(id);
-        model.addAttribute("debts", debtService.getAllDebts());
-        model.addAttribute("products", productService.findAll());  // Ürünleri de model'e ekleyelim
-        return "debts";
+        model.addAttribute(Constants.DEBTS, debtService.getAllDebts());
+        model.addAttribute(Constants.PRODUCTS, productService.findAll());  // Ürünleri de model'e ekleyelim
+        return Constants.DEBTS;
     }
 }

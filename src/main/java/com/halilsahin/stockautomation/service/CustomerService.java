@@ -2,7 +2,6 @@ package com.halilsahin.stockautomation.service;
 
 import com.halilsahin.stockautomation.entity.Customer;
 import com.halilsahin.stockautomation.repository.CustomerRepository;
-import com.halilsahin.stockautomation.repository.TransactionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

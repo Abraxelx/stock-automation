@@ -41,8 +41,8 @@ public class SalesController {
     // Satış Sayfasını Görüntüleme
     @GetMapping
     public String showSalesPage(Model model) {
-        model.addAttribute("saleItems", saleItems);
-        model.addAttribute("total", total);
+        model.addAttribute(Constants.SALE_ITEMS, saleItems);
+        model.addAttribute(Constants.TOTAL, total);
         return Constants.SALES;
     }
 
@@ -67,8 +67,8 @@ public class SalesController {
             int newQuantity = existingItem.getQuantity() + quantity;
             if (newQuantity > product.getStock()) {
                 model.addAttribute("error", "Yetersiz stok! En fazla " + (product.getStock() - existingItem.getQuantity()) + " adet ekleyebilirsiniz.");
-                model.addAttribute("saleItems", saleItems);
-                model.addAttribute("total", total);
+                model.addAttribute(Constants.SALE_ITEMS, saleItems);
+                model.addAttribute(Constants.TOTAL, total);
                 return Constants.SALES;
             }
 
@@ -79,8 +79,8 @@ public class SalesController {
             // Yeni bir ürün ekleniyorsa, stok kontrolü yap
             if (quantity > product.getStock()) {
                 model.addAttribute("error", "Yetersiz stok! En fazla " + product.getStock() + " adet ekleyebilirsiniz.");
-                model.addAttribute("saleItems", saleItems);
-                model.addAttribute("total", total);
+                model.addAttribute(Constants.SALE_ITEMS, saleItems);
+                model.addAttribute(Constants.TOTAL, total);
                 return Constants.SALES;
             }
 
@@ -97,8 +97,8 @@ public class SalesController {
         total = saleItems.stream().mapToDouble(SaleItem::getSubtotal).sum();
 
         // Görünümü güncelle
-        model.addAttribute("saleItems", saleItems);
-        model.addAttribute("total", total);
+        model.addAttribute(Constants.SALE_ITEMS, saleItems);
+        model.addAttribute(Constants.TOTAL, total);
         return Constants.SALES;
     }
 
@@ -115,8 +115,8 @@ public class SalesController {
         Product product = item.getProduct();
         if (product.getStock() < quantity) {
             model.addAttribute("error", "Yetersiz stok! En fazla " + product.getStock() + " adet ekleyebilirsiniz.");
-            model.addAttribute("saleItems", saleItems);
-            model.addAttribute("total", total);
+            model.addAttribute(Constants.SALE_ITEMS, saleItems);
+            model.addAttribute(Constants.TOTAL, total);
             return Constants.SALES;
         }
 
@@ -126,8 +126,8 @@ public class SalesController {
 
         // Toplam tutarı yeniden hesapla
         double total = saleItems.stream().mapToDouble(SaleItem::getSubtotal).sum();
-        model.addAttribute("saleItems", saleItems);
-        model.addAttribute("total", total);
+        model.addAttribute(Constants.SALE_ITEMS, saleItems);
+        model.addAttribute(Constants.TOTAL, total);
 
         return "sales";
     }
@@ -144,8 +144,8 @@ public class SalesController {
         saleItems.remove(saleItem); // Ürünü listeden çıkar
 
         // Görünümü güncelle
-        model.addAttribute("saleItems", saleItems);
-        model.addAttribute("total", total);
+        model.addAttribute(Constants.SALE_ITEMS, saleItems);
+        model.addAttribute(Constants.TOTAL, total);
         return "redirect:/sales";
     }
 
