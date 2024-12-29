@@ -10,6 +10,7 @@ services:
       POSTGRES_DB: stock_db
     ports:
       - "5432:5432"
+    restart: always
     networks:
       - app-network
     volumes:
@@ -19,9 +20,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    image: spring-app-image:latest
     container_name: spring-app-container
     ports:
       - "8080:8080"
+    restart: always
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/stock_db
       SPRING_DATASOURCE_USERNAME: root
