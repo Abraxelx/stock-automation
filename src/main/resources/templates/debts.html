@@ -12,7 +12,7 @@
 
     <!-- Borç Girişi Formu -->
     <h4>Yeni Borç Girişi</h4>
-    <form action="/debts/add" method="post" class="mb-4">
+    <form th:action="@{/debts/add}" method="post" class="mb-4">
         <div class="mb-3">
             <label for="customerId" class="form-label">Müşteri Seç</label>
             <select id="customerId" name="customerId" class="form-control" required>
@@ -42,8 +42,8 @@
     </form>
 
     <!-- Borç Arama -->
-    <form action="/debts/search" method="get" class="mb-4">
-        <input type="text" name="firstName" placeholder="Müşteri adı ile ara" class="form-control" />
+    <form th:action="@{/debts/search}" method="get" class="mb-4">
+        <input type="text" name="customerName" placeholder="Müşteri adı ile ara" class="form-control" oninput="this.value = this.value.toUpperCase()"/>
         <button type="submit" class="btn btn-primary mt-2">Ara</button>
     </form>
 

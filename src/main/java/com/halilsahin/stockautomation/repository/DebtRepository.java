@@ -8,7 +8,6 @@ import java.util.List;
 
 @Repository
 public interface DebtRepository extends JpaRepository<Debt, Long> {
-    List<Debt> findByCustomerFirstNameContainingOrCustomerLastNameContaining(String firstName, String lastName);
-    List<Debt> findByCustomerFirstNameContaining(String customerName); // Müşteriye göre arama
+    List<Debt> findDebtsByDebtorFirstNameContainsIgnoreCase(String customerName); // Müşteriye göre arama
     List<Debt> findByIsPaid(boolean isPaid); // Ödeme durumuna göre filtreleme
 }

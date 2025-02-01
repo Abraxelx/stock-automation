@@ -1,6 +1,5 @@
 package com.halilsahin.stockautomation.entity;
 
-import com.halilsahin.stockautomation.enums.TransactionType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.proxy.HibernateProxy;
@@ -13,27 +12,18 @@ import java.util.Objects;
 @Setter
 @ToString
 @RequiredArgsConstructor
-public class Transaction {
+public class Installment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Enumerated(EnumType.STRING)
-    private TransactionType transactionType;
 
-    private String description;
+    private double amount;               // Taksit tutarı
+    private LocalDateTime dueDate;       // Vade tarihi
+    private boolean isPaid;              // Ödeme durumu
 
-    private double amount;
-
-    private LocalDateTime date;
-
-    private String relatedEntity;
-
-    public Transaction(LocalDateTime now, String s, String debt, TransactionType transactionType) {
-        this.date = now;
-        this.description = s;
-        this.amount = Double.parseDouble(debt);
-        this.transactionType = transactionType;
-    }
+    @ManyToOne
+    @JoinColumn(name = "debt_id")
+    private Debt debt;
 
     @Override
     public final boolean equals(Object o) {
@@ -42,7 +32,7 @@ public class Transaction {
         Class<?> oEffectiveClass = o instanceof HibernateProxy ? ((HibernateProxy) o).getHibernateLazyInitializer().getPersistentClass() : o.getClass();
         Class<?> thisEffectiveClass = this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass() : this.getClass();
         if (thisEffectiveClass != oEffectiveClass) return false;
-        Transaction that = (Transaction) o;
+        Installment that = (Installment) o;
         return getId() != null && Objects.equals(getId(), that.getId());
     }
 
