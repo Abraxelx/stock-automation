@@ -15,15 +15,15 @@
     <form th:action="@{/products}" method="post" class="row g-3">
 
         <!-- Barkod -->
-        <div class="col-md-6">
+        <div class="col-md-4">
             <label for="barcode" class="form-label">Barkod</label>
             <input type="text" class="form-control" id="barcode" name="barcode" placeholder="Barkod girin" required autofocus>
         </div>
 
         <!-- Ürün Adı -->
-        <div class="col-md-6">
+        <div class="col-md-4">
             <label for="name" class="form-label">Ürün Adı</label>
-            <input type="text" class="form-control" id="name" name="name" placeholder="Ürün adı girin" required>
+            <input type="text" class="form-control" id="name" name="name" placeholder="Ürün adı girin" required oninput="this.value = this.value.toUpperCase()">
         </div>
 
         <!-- Stok -->
@@ -38,10 +38,16 @@
             <input type="number" step="0.01" class="form-control" id="price" name="price" placeholder="Ürün fiyatı" required>
         </div>
 
+        <!-- Alış Fiyatı -->
+        <div class="col-md-4">
+            <label for="price" class="form-label">Fiyat</label>
+            <input type="number" step="0.01" class="form-control" id="purchasePrice" name="purchasePrice" placeholder="Alış fiyatı" required>
+        </div>
+
         <!-- Açıklama -->
         <div class="col-md-4">
             <label for="description" class="form-label">Açıklama</label>
-            <input type="text" class="form-control" id="description" name="description" placeholder="Açıklama Giriniz">
+            <input type="text" class="form-control" id="description" name="description" placeholder="Açıklama Giriniz" oninput="this.value = this.value.toUpperCase()">
         </div>
 
 
@@ -72,6 +78,7 @@
             <th>Ürün Adı</th>
             <th>Stok</th>
             <th>Fiyat</th>
+            <th>Alış Fiyatı</th>
         </tr>
         </thead>
         <tbody>
@@ -81,6 +88,7 @@
             <td th:text="${product.name}"></td>
             <td th:text="${product.stock}"></td>
             <td th:text="${product.price} + ' TL'"></td>
+            <td th:text="${product.purchasePrice} + ' TL'"></td>
         </tr>
         </tbody>
     </table>

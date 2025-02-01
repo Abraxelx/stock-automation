@@ -9,7 +9,6 @@
 <!-- Navbar -->
 <div th:insert="~{fragments/navbar.html :: navbar}"></div>
 
-
 <div class="container mt-4">
   <div th:if="${error}" class="alert alert-danger" role="alert">
     <span th:text="${error}"></span>
@@ -26,7 +25,7 @@
     <!-- Miktar Girişi -->
     <div class="col-md-4">
       <label for="quantity" class="form-label">Miktar</label>
-      <input type="number" class="form-control" id="quantity" name="quantity" placeholder="Miktar" min="1" value="1" required>
+      <input type="number" class="form-control" id="quantity" name="quantity" placeholder="Miktar" min="1" value="1" required autocomplete="off">
     </div>
 
     <!-- Ürün Ekle Butonu -->
@@ -60,20 +59,16 @@
         <!-- Miktar Güncelleme Input -->
         <form th:action="@{/sales/updateQuantity}" method="post" class="d-inline">
           <input type="hidden" name="barcode" th:value="${item.product.barcode}">
-          <input type="number" class="form-control d-inline w-50" name="quantity" th:value="${item.quantity}" min="1" onchange="this.form.submit()">
+          <input type="number" class="form-control d-inline w-50" name="quantity" th:value="${item.quantity}" min="1" onchange="this.form.submit()" autocomplete="off">
         </form>
       </td>
       <td th:text="${item.unitPrice} + ' TL'"></td>
       <td th:text="${item.subtotal} + ' TL'"></td>
       <td>
-      <td>
         <a th:href="@{/sales/item/{barcode}(barcode=${item.product.barcode})}" class="btn btn-danger btn-sm">Sil</a>
-      </td>
-
       </td>
     </tr>
     </tbody>
-
   </table>
 
   <!-- Toplam Tutar -->
@@ -88,6 +83,19 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+  // Sayısal alanlar için doğrulama
+  document.querySelectorAll('input[type="number"]').forEach(input => {
+    input.addEventListener('input', function (event) {
+      // Sayısal olmayan karakterleri kaldır
+      this.value = this.value.replace(/[^0-9]/g, '');
+
+      // Min değerinden küçükse, min değerine ayarla
+      if (this.value < this.min) {
+        this.value = this.min;
+      }
+    });
+  });
+
   // Form gönderildikten sonra barkod alanını yeniden odakla
   document.querySelector('form').addEventListener('submit', function () {
     setTimeout(() => document.getElementById('barcode').focus(), 100);

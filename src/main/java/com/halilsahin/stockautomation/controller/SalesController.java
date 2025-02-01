@@ -15,6 +15,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +23,8 @@ import java.util.List;
 @Controller
 @RequestMapping("/sales")
 public class SalesController {
+    private final DecimalFormat decimalFormat = new DecimalFormat("#.###");
+
     private final ProductRepository productRepository;
     private final SaleRepository saleRepository;
     private final SaleItemRepository saleItemRepository;
@@ -89,7 +92,7 @@ public class SalesController {
             saleItem.setProduct(product);
             saleItem.setQuantity(quantity);
             saleItem.setUnitPrice(product.getPrice());
-            saleItem.setSubtotal(product.getPrice() * quantity);
+            saleItem.setSubtotal(Double.parseDouble(decimalFormat.format(product.getPrice() * quantity)));
             saleItems.add(saleItem);
         }
 
@@ -98,7 +101,7 @@ public class SalesController {
 
         // Görünümü güncelle
         model.addAttribute(Constants.SALE_ITEMS, saleItems);
-        model.addAttribute(Constants.TOTAL, total);
+        model.addAttribute(Constants.TOTAL, decimalFormat.format(total));
         return Constants.SALES;
     }
 

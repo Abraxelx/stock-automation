@@ -41,6 +41,7 @@ public class ProductController {
                              @RequestParam String description,
                              @RequestParam int stock,
                              @RequestParam double price,
+                             @RequestParam double purchasePrice,
                              Model model) {
         if (productService.findByBarcode(barcode) != null) {
             model.addAttribute("error", "Bu barkod zaten mevcut!");
@@ -53,6 +54,7 @@ public class ProductController {
         product.setBarcode(barcode);
         product.setStock(stock);
         product.setPrice(price);
+        product.setPurchasePrice(purchasePrice);
 
         Transaction transaction = new Transaction();
         transaction.setTransactionType(TransactionType.STOCK_IN);

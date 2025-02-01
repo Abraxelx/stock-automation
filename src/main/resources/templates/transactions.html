@@ -7,23 +7,31 @@
 <body>
 <div th:insert="~{fragments/navbar.html :: navbar}"></div>
 
-
 <div class="container mt-5">
   <h2 class="text-center">İşlem Kaydı</h2>
   <table class="table table-bordered table-striped">
     <thead class="table-dark">
     <tr>
       <th>#</th>
-      <th>İşlem Tipi</th>
-      <th>Açıklama</th>
-      <th>Miktar</th>
-      <th>Tarih</th>
+      <th>İŞLEM TİPİ</th>
+      <th>AÇIKLAMA</th>
+      <th>TUTAR</th>
+      <th>TARİH</th>
     </tr>
     </thead>
     <tbody>
     <tr th:each="transaction, iterStat : ${transactions}">
       <td th:text="${iterStat.count}"></td>
-      <td th:text="${transaction.transactionType.description}"></td>
+      <td>
+        <!-- İşlem tipine göre renklendirme -->
+        <span th:switch="${transaction.transactionType.toString()}">
+          <span th:case="SALE" class="text-danger">SATIŞ</span>
+          <span th:case="STOCK_IN" class="text-success">STOK GİRİŞİ</span>
+          <span th:case="STOCK_OUT" class="text-warning">STOK ÇIKIŞI</span>
+          <span th:case="DEBT_IN" class="text-primary">BORÇ GİRİŞİ</span>
+          <span th:case="DEBT_OUT" class="text-info">BORÇ ÇIKIŞI</span>
+        </span>
+      </td>
       <td th:text="${transaction.description}"></td>
       <td th:text="${transaction.amount} + ' TL'"></td>
       <td th:text="${#temporals.format(transaction.date, 'dd MMMM yyyy EEEE - HH:mm ')}"></td>
