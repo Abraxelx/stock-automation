@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -88,6 +89,52 @@ public class ProductController {
         model.addAttribute("keyword", keyword);
         return Constants.PRODUCTS;
     }
+
+    @GetMapping("/edit/{id}")
+    public String showEditForm(@PathVariable("id") Long id, Model model, RedirectAttributes redirectAttributes) {
+        try {
+            Product product = productService.findById(id);
+            model.addAttribute("product", product);
+            return "edit-product"; // HTML dosyasının adı
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Ürün bulunamadı.");
+            return "redirect:/products";
+        }
+    }
+
+
+    @PostMapping("/update")
+    public String updateProduct(@ModelAttribute("product") Product product, RedirectAttributes redirectAttributes) {
+        try {
+            productService.updateProduct(product);
+            redirectAttributes.addFlashAttribute("success", "Ürün başarıyla güncellendi.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Ürün güncellenirken bir hata oluştu.");
+        }
+        return "redirect:/products";
+    }
+
+
+    @PostMapping("/update/{id}")
+    public String updateProduct(@PathVariable Long id, @ModelAttribute("product") Product updatedProduct,
+                                RedirectAttributes redirectAttributes) {
+        productService.updateProduct(updatedProduct);
+        redirectAttributes.addFlashAttribute("success", "Ürün başarıyla güncellendi.");
+        return "redirect:/products";
+    }
+
+
+    @PostMapping("/delete/{id}")
+    public String deleteProduct(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            productService.deleteById(id);
+            redirectAttributes.addFlashAttribute("success", "Ürün başarıyla silindi.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Ürün silinirken bir hata oluştu.");
+        }
+        return "redirect:/products";
+    }
+
 
 
 }

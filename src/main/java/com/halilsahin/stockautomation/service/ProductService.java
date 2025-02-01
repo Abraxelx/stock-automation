@@ -22,8 +22,23 @@ public class ProductService {
     }
 
     public Product findById(Long id) {
-        return productRepository.findById(id).orElse(null);
+        return productRepository.findById(id).orElseThrow(() -> new RuntimeException("Ürün bulunamadı."));
     }
+
+    public void updateProduct(Product updatedProduct) {
+        Product existingProduct = findById(updatedProduct.getId());
+        existingProduct.setBarcode(updatedProduct.getBarcode());
+        existingProduct.setName(updatedProduct.getName());
+        existingProduct.setStock(updatedProduct.getStock());
+        existingProduct.setPurchasePrice(updatedProduct.getPurchasePrice());
+        existingProduct.setPrice(updatedProduct.getPrice());
+        productRepository.save(existingProduct);
+    }
+
+    public void deleteById(Long id) {
+        productRepository.deleteById(id);
+    }
+
 
     public List<Product> findAllByOrderByIdDesc() {
         return productRepository.findAllByOrderByIdDesc();
