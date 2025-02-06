@@ -3,12 +3,14 @@ package com.halilsahin.stockautomation.service;
 import com.halilsahin.stockautomation.entity.Debt;
 import com.halilsahin.stockautomation.entity.Installment;
 import com.halilsahin.stockautomation.entity.Transaction;
+import com.halilsahin.stockautomation.enums.PaymentMethod;
 import com.halilsahin.stockautomation.enums.TransactionType;
 import com.halilsahin.stockautomation.repository.DebtRepository;
 import com.halilsahin.stockautomation.repository.InstallmentRepository;
 import com.halilsahin.stockautomation.repository.TransactionRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -85,5 +87,34 @@ public class DebtService {
 
     public void saveInstallment(Installment installment) {
         installmentRepository.save(installment);
+    }
+
+    public void payDebt(Long debtId, PaymentMethod paymentMethod) {
+        Debt debt = findDebtById(debtId);
+        debt.setPaid(true);
+        debt.setPaymentDate(LocalDateTime.now());
+        debt.setPaymentMethod(paymentMethod);
+       
+        // Taksitleri de ödenmiş olarak işaretle
+        if (debt.getInstallments() != null) {
+            for (Installment inst : debt.getInstallments()) {
+                inst.setPaid(true);
+                inst.setPaymentDate(debt.getPaymentDate());
+            }
+        }
+       
+        // Ödeme işlemi için Transaction kaydı
+        Transaction transaction = new Transaction(
+            LocalDateTime.now(),
+            String.format("Borç Ödemesi - %s: %s TL (%s)", 
+                debt.getDebtor().getFirstName() + " " + debt.getDebtor().getLastName(),
+                debt.getAmount(),
+                paymentMethod.getDisplayName()),
+            debt.getAmount(),
+            TransactionType.DEBT_OUT
+        );
+        transactionRepository.save(transaction);
+       
+        debtRepository.save(debt);
     }
 }

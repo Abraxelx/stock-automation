@@ -5,6 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Borç Ödeme</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .card {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            border: none;
+        }
+        .card-header {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+            border-radius: 10px 10px 0 0 !important;
+        }
+        .btn-action {
+            padding: 0.25rem 0.5rem;
+            margin: 0.15rem;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+        .btn-action:hover {
+            transform: translateY(-2px);
+        }
+    </style>
 </head>
 <body>
 <!-- Navbar -->
@@ -37,14 +59,22 @@
                             <th>Vade Tarihi:</th>
                             <td th:text="${#temporals.format(debt.dueDate, 'dd MMM yyyy HH:mm')}"></td>
                         </tr>
-                        <tr th:if="${debt.document != null}">
-                            <th>Belge:</th>
+                        <tr>
+                            <th>Belgeler:</th>
                             <td>
-                                <a th:href="@{/debts/document/{id}(id=${debt.id})}" 
-                                   target="_blank" 
-                                   class="btn btn-info btn-sm">
-                                    <i class="fas fa-file"></i> Belgeyi Görüntüle
-                                </a>
+                                <span th:if="${debt.documents.empty}" class="text-muted">
+                                    <i class="fas fa-info-circle"></i> Belge bulunmamaktadır
+                                </span>
+                                <div th:if="${!debt.documents.empty}" class="btn-group">
+                                    <button type="button" class="btn btn-info btn-sm"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#documentModal">
+                                        <i class="fas fa-eye"></i> Belgeleri Görüntüle
+                                        <span class="badge bg-light text-dark ms-1" 
+                                              th:text="${debt.documents.size()}">
+                                        </span>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     </table>
@@ -70,8 +100,12 @@
                         <td th:text="${installment.amount + ' TL'}"></td>
                         <td th:text="${#temporals.format(installment.dueDate, 'dd MMM yyyy HH:mm')}"></td>
                         <td>
-                            <span th:if="${installment.paid}" class="badge bg-success">Ödendi</span>
-                            <span th:unless="${installment.paid}" class="badge bg-warning">Ödenmedi</span>
+                            <span th:if="${installment.paid}" class="badge bg-success">
+                                <i class="fas fa-check-circle"></i> Ödendi
+                            </span>
+                            <span th:unless="${installment.paid}" class="badge bg-warning">
+                                <i class="fas fa-clock"></i> Ödenmedi
+                            </span>
                         </td>
                         <td>
                             <form th:if="${!installment.paid}" th:action="@{/debts/pay-installment/{id}(id=${installment.id})}" 
@@ -94,9 +128,10 @@
                         <div class="mb-3">
                             <label for="paymentMethod" class="form-label">Ödeme Yöntemi</label>
                             <select class="form-select" id="paymentMethod" name="paymentMethod" required>
-                                <option value="CASH">Nakit</option>
-                                <option value="CREDIT_CARD">Kredi Kartı</option>
-                                <option value="BANK_TRANSFER">Havale/EFT</option>
+                                <option th:each="method : ${T(com.halilsahin.stockautomation.enums.PaymentMethod).values()}"
+                                        th:value="${method}"
+                                        th:text="${method.displayName}">
+                                </option>
                             </select>
                         </div>
                         <button type="submit" class="btn btn-success">Tamamını Öde</button>
@@ -106,8 +141,16 @@
 
             <!-- Ödeme Durumu Mesajı -->
             <div th:if="${debt.paid}" class="alert alert-success mt-4">
-                Bu borç ödenmiştir. Ödeme Tarihi: 
-                <span th:text="${#temporals.format(debt.paymentDate, 'dd MMM yyyy HH:mm')}"></span>
+                <i class="fas fa-check-circle"></i>
+                Bu borç ödenmiştir.
+                <div class="mt-2">
+                    <strong>Ödeme Tarihi:</strong> 
+                    <span th:text="${#temporals.format(debt.paymentDate, 'dd MMM yyyy HH:mm')}"></span>
+                </div>
+                <div>
+                    <strong>Ödeme Yöntemi:</strong>
+                    <span th:text="${debt.paymentMethod.displayName}"></span>
+                </div>
             </div>
 
             <!-- Geri Dönüş Butonu -->

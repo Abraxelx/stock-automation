@@ -1,25 +1,17 @@
 package com.halilsahin.stockautomation.enums;
 
-import lombok.Getter;
-
-@Getter
-public enum DebtType {
-
+public enum PaymentMethod {
     CASH("Nakit"),
-    BILL("Senet"),
-    PRODUCT("Mal"),
     CREDIT_CARD("Kredi Kartı"),
-    CHECK("Çek");
+    BANK_TRANSFER("Havale/EFT");
 
-    //language=IgnoreLang
     private final String displayName;
 
-    DebtType(String displayName) {
+    PaymentMethod(String displayName) {
         this.displayName = displayName;
     }
 
     public String getDisplayName() {
         return displayName;
     }
-
-}
+} 

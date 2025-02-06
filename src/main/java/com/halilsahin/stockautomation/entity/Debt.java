@@ -1,6 +1,7 @@
 package com.halilsahin.stockautomation.entity;
 
 import com.halilsahin.stockautomation.enums.DebtType;
+import com.halilsahin.stockautomation.enums.PaymentMethod;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.proxy.HibernateProxy;
@@ -23,6 +24,9 @@ public class Debt {
     private LocalDateTime dueDate; // Vadesi
     private LocalDateTime paymentDate; // Ödeme tarihi, eğer ödeme yapılmışsa
     private boolean isPaid;      // Ödeme durumu (ödenmiş/ödenmemiş)
+
+    @Enumerated(EnumType.STRING)
+    private PaymentMethod paymentMethod;  // Ödeme yöntemi
 
     @Enumerated(EnumType.STRING)
     private DebtType debtType;  // Borç türü (MAL, ÇEK, SENET, PARA)

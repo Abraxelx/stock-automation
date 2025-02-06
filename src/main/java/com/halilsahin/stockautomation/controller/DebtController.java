@@ -3,6 +3,7 @@ package com.halilsahin.stockautomation.controller;
 import com.halilsahin.stockautomation.constants.Constants;
 import com.halilsahin.stockautomation.entity.*;
 import com.halilsahin.stockautomation.enums.DebtType;
+import com.halilsahin.stockautomation.enums.PaymentMethod;
 import com.halilsahin.stockautomation.enums.TransactionType;
 import com.halilsahin.stockautomation.repository.DebtRepository;
 import com.halilsahin.stockautomation.repository.TransactionRepository;
@@ -150,25 +151,9 @@ public class DebtController {
 
     // Ödeme işlemi
     @PostMapping("/pay/{id}")
-    public String payDebt(@PathVariable Long id, Model model) {
-        Debt debtById = debtService.findDebtById(id);
-        if (!debtById.isPaid()) {
-            debtById.setPaid(true);
-            debtById.setPaymentDate(LocalDateTime.now());
-            debtRepository.save(debtById);
-            // Transaction kaydı (Ödeme işlemi)
-            transactionRepository.save(new Transaction(
-                    LocalDateTime.now(),
-                    "BORÇ ÖDEME YAPILDI: ",
-                    debtById.getAmount(),
-                    TransactionType.DEBT_OUT
-            ));
-        }
-
-        model.addAttribute(Constants.DEBTS, debtService.getAllDebts());
-        model.addAttribute("customers", customerService.getAllCustomers());
-        model.addAttribute(Constants.PRODUCTS, productService.findAll());  // Ürünleri de model'e ekleyelim
-        return Constants.DEBTS;
+    public String payDebt(@PathVariable Long id, @RequestParam PaymentMethod paymentMethod) {
+        debtService.payDebt(id, paymentMethod);
+        return "redirect:/debts";
     }
 
     // ÖDEME EKRANI: payment.html (Ödeme yapmak için ayrı ekran)
