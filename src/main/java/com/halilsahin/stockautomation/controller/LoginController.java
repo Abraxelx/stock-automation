@@ -11,6 +11,11 @@ public class LoginController {
         return "login";
     }
 
+    @GetMapping("/logout")
+    public String redirectToLogin() {
+        return "redirect:/login";
+    }
+
     @GetMapping("/")
     public String home(HttpSession session) {
         if (session.getAttribute("SPRING_SECURITY_CONTEXT") != null) { // Oturumda kullanıcı varsa
