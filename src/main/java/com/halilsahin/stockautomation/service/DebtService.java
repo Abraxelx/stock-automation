@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 @Service
 public class DebtService {
@@ -116,5 +118,42 @@ public class DebtService {
         transactionRepository.save(transaction);
        
         debtRepository.save(debt);
+    }
+
+    // Vadesi geçen borçları getir
+    public List<Debt> getOverdueDebts() {
+        return debtRepository.findByIsPaidFalseAndDueDateBefore(LocalDateTime.now());
+    }
+
+    // Vadesi yaklaşan borçları getir (3 gün)
+    public List<Debt> getUpcomingDebts() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime threeDaysLater = now.plusDays(3);
+        return debtRepository.findByIsPaidFalseAndDueDateBetween(now, threeDaysLater);
+    }
+
+    // Borç istatistiklerini getir
+    public Map<String, Object> getDebtStatistics() {
+        Map<String, Object> stats = new HashMap<>();
+        List<Debt> allDebts = getAllDebts();
+        
+        double totalDebtAmount = allDebts.stream()
+            .mapToDouble(Debt::getAmount)
+            .sum();
+            
+        double paidDebtAmount = allDebts.stream()
+            .filter(Debt::isPaid)
+            .mapToDouble(Debt::getAmount)
+            .sum();
+            
+        double unpaidDebtAmount = totalDebtAmount - paidDebtAmount;
+        
+        stats.put("totalDebtAmount", totalDebtAmount);
+        stats.put("paidDebtAmount", paidDebtAmount);
+        stats.put("unpaidDebtAmount", unpaidDebtAmount);
+        stats.put("overdueDebts", getOverdueDebts());
+        stats.put("upcomingDebts", getUpcomingDebts());
+        
+        return stats;
     }
 }

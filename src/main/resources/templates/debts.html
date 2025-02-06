@@ -88,27 +88,70 @@
 
     <!-- Özet Kartları -->
     <div class="row mb-4">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="dashboard-card">
                 <i class="fas fa-money-bill-wave fa-2x text-primary mb-3"></i>
                 <h5>Toplam Borç</h5>
-                <h3 class="text-primary">123,456 TL</h3>
+                <h3 class="text-primary" th:text="${#numbers.formatDecimal(stats.totalDebtAmount, 0, 'COMMA', 2, 'POINT') + ' TL'}">0 TL</h3>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="dashboard-card">
-                <i class="fas fa-exclamation-triangle fa-2x text-warning mb-3"></i>
-                <h5>Vadesi Geçen</h5>
-                <h3 class="text-warning">12,345 TL</h3>
-            </div>
-        </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="dashboard-card">
                 <i class="fas fa-check-circle fa-2x text-success mb-3"></i>
-                <h5>Bu Ay Tahsil Edilen</h5>
-                <h3 class="text-success">45,678 TL</h3>
+                <h5>Ödenen Borç</h5>
+                <h3 class="text-success" th:text="${#numbers.formatDecimal(stats.paidDebtAmount, 0, 'COMMA', 2, 'POINT') + ' TL'}">0 TL</h3>
             </div>
         </div>
+        <div class="col-md-3">
+            <div class="dashboard-card">
+                <i class="fas fa-exclamation-circle fa-2x text-warning mb-3"></i>
+                <h5>Bekleyen Borç</h5>
+                <h3 class="text-warning" th:text="${#numbers.formatDecimal(stats.unpaidDebtAmount, 0, 'COMMA', 2, 'POINT') + ' TL'}">0 TL</h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="dashboard-card">
+                <i class="fas fa-file-export fa-2x text-info mb-3"></i>
+                <h5>Raporlar</h5>
+                <div class="btn-group">
+                    <a href="/debts/export/pdf" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-file-pdf"></i> PDF
+                    </a>
+                    <a href="/debts/export/excel" class="btn btn-sm btn-outline-success">
+                        <i class="fas fa-file-excel"></i> Excel
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Uyarılar -->
+    <div class="alert alert-danger" th:if="${!stats.overdueDebts.empty}">
+        <h5><i class="fas fa-exclamation-triangle"></i> Vadesi Geçen Borçlar</h5>
+        <ul class="list-unstyled">
+            <li th:each="debt : ${stats.overdueDebts}">
+                <i class="fas fa-arrow-right"></i>
+                <span th:text="${debt.debtor.firstName + ' ' + debt.debtor.lastName}"></span> -
+                <span th:text="${debt.amount + ' TL'}"></span>
+                <small class="text-muted" 
+                        th:text="'(Vade: ' + ${#temporals.format(debt.dueDate, 'dd MMM yyyy')} + ')'">
+                </small>
+            </li>
+        </ul>
+    </div>
+
+    <div class="alert alert-warning" th:if="${!stats.upcomingDebts.empty}">
+        <h5><i class="fas fa-clock"></i> Vadesi Yaklaşan Borçlar</h5>
+        <ul class="list-unstyled">
+            <li th:each="debt : ${stats.upcomingDebts}">
+                <i class="fas fa-arrow-right"></i>
+                <span th:text="${debt.debtor.firstName + ' ' + debt.debtor.lastName}"></span> -
+                <span th:text="${debt.amount + ' TL'}"></span>
+                <small class="text-muted" 
+                        th:text="'(Vade: ' + ${#temporals.format(debt.dueDate, 'dd MMM yyyy')} + ')'">
+                </small>
+            </li>
+        </ul>
     </div>
 
     <!-- Yeni Borç Girişi Formu -->

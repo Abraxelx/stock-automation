@@ -8,6 +8,8 @@ import com.halilsahin.stockautomation.enums.TransactionType;
 import com.halilsahin.stockautomation.repository.DebtRepository;
 import com.halilsahin.stockautomation.repository.TransactionRepository;
 import com.halilsahin.stockautomation.service.*;
+import com.halilsahin.stockautomation.util.DebtExcelExporter;
+import com.halilsahin.stockautomation.util.DebtPDFExporter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -23,10 +25,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+
+import jakarta.servlet.http.HttpServletResponse;
+import com.itextpdf.text.DocumentException;
 
 @Controller
 @RequestMapping("/debts")
@@ -137,7 +142,8 @@ public class DebtController {
     public String getAllDebts(Model model) {
         model.addAttribute(Constants.DEBTS, debtService.getAllDebts());
         model.addAttribute("customers", customerService.getAllCustomers());
-        model.addAttribute(Constants.PRODUCTS, productService.findAll());  // Ürünleri de model'e ekleyelim
+        model.addAttribute(Constants.PRODUCTS, productService.findAll());
+        model.addAttribute("stats", debtService.getDebtStatistics());
         return Constants.DEBTS;
     }
 
@@ -348,6 +354,32 @@ public class DebtController {
             return "redirect:/debts/edit/" + debtId;
         }
         return "redirect:/debts";
+    }
+
+    @GetMapping("/export/pdf")
+    public void exportToPDF(HttpServletResponse response) throws IOException, DocumentException {
+        response.setContentType("application/pdf");
+        String headerKey = "Content-Disposition";
+        String headerValue = "attachment; filename=borçlar_" + 
+            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm")) + ".pdf";
+        response.setHeader(headerKey, headerValue);
+
+        List<Debt> debts = debtService.getAllDebts();
+        DebtPDFExporter exporter = new DebtPDFExporter(debts);
+        exporter.export(response);
+    }
+
+    @GetMapping("/export/excel")
+    public void exportToExcel(HttpServletResponse response) throws IOException {
+        response.setContentType("application/octet-stream");
+        String headerKey = "Content-Disposition";
+        String headerValue = "attachment; filename=borçlar_" + 
+            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm")) + ".xlsx";
+        response.setHeader(headerKey, headerValue);
+
+        List<Debt> debts = debtService.getAllDebts();
+        DebtExcelExporter exporter = new DebtExcelExporter(debts);
+        exporter.export(response);
     }
 
 }
