@@ -6,6 +6,8 @@ import org.hibernate.proxy.HibernateProxy;
 
 import java.util.Objects;
 
+import com.halilsahin.stockautomation.enums.UnitType;
+
 @Getter
 @Setter
 @ToString
@@ -32,6 +34,10 @@ public class Product {
     private double purchasePrice;
 
     private String description;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = true)
+    private UnitType unitType = UnitType.PIECE;
 
     @Override
     public final boolean equals(Object o) {
