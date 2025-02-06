@@ -5,11 +5,13 @@ import lombok.Getter;
 @Getter
 public enum DebtType {
 
-    CASH("SATIŞ"),
-    BILL("STOK GİRİŞİ"),
-    PRODUCT("STOK ÇIKIŞI"),
-    CHECK("BORÇ GİRİŞİ");
+    CASH("NAKİT"),
+    BILL("SENET"),
+    PRODUCT("MAL"),
+    CREDIT_CARD("CREDIT"),
+    CHECK("ÇEK");
 
+    //language=IgnoreLang
     private final String description;
 
     DebtType(String description) {

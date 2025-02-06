@@ -6,6 +6,8 @@ import lombok.*;
 import org.hibernate.proxy.HibernateProxy;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 @Entity
@@ -37,8 +39,12 @@ public class Debt {
     @JoinColumn(name = "product_id", nullable = true)
     private Product product;  // Ürün bilgisi
 
-    @OneToOne(mappedBy = "debt", cascade = CascadeType.ALL)
-    private Document document; // Belge ilişkisi
+    @OneToMany(mappedBy = "debt", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Document> documents = new ArrayList<>();
+
+    @OneToMany(mappedBy = "debt", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Installment> installments;
+
 
     @Override
     public final boolean equals(Object o) {

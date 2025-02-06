@@ -28,10 +28,10 @@ public class Transaction {
 
     private String relatedEntity;
 
-    public Transaction(LocalDateTime now, String s, String debt, TransactionType transactionType) {
+    public Transaction(LocalDateTime now, String s, double debt, TransactionType transactionType) {
         this.date = now;
         this.description = s;
-        this.amount = Double.parseDouble(debt);
+        this.amount = debt;
         this.transactionType = transactionType;
     }
 

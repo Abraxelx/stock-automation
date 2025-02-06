@@ -19,6 +19,8 @@ public class Installment {
 
     private double amount;               // Taksit tutarı
     private LocalDateTime dueDate;       // Vade tarihi
+    // Taksit ödeme tarihi (varsa)
+    private LocalDateTime paymentDate;
     private boolean isPaid;              // Ödeme durumu
 
     @ManyToOne

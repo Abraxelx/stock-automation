@@ -1,87 +1,262 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="tr">
 <head>
-    <title>Veresiye İşlemleri</title>
+    <meta charset="UTF-8">
+    <title>Borç Yönetimi</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
+<!-- Navbar -->
 <div th:insert="~{fragments/navbar.html :: navbar}"></div>
 
 <div class="container mt-5">
-    <h2 class="text-center">Veresiye İşlemleri</h2>
+    <h2 class="text-center">Borç Yönetimi</h2>
 
-    <!-- Borç Girişi Formu -->
-    <h4>Yeni Borç Girişi</h4>
-    <form th:action="@{/debts/add}" method="post" class="mb-4">
-        <div class="mb-3">
-            <label for="customerId" class="form-label">Müşteri Seç</label>
-            <select id="customerId" name="customerId" class="form-control" required>
-                <option th:each="customer : ${customers}"
-                        th:value="${customer.id}"
-                        th:text="${customer.firstName+ ' ' + customer.lastName}"></option>
-            </select>
-        </div>
-        <div class="mb-3">
-            <label for="productId" class="form-label">Ürün Seç</label>
-            <select id="productId" name="productId" class="form-control">
-                <option value="" disabled selected>Ürün Borç verdiyseniz ürün seçin</option>
-                <option th:each="product : ${products}"
-                        th:value="${product.id}"
-                        th:text="${product.name}"></option>
-            </select>
-        </div>
-        <div class="mb-3">
-            <label for="amount" class="form-label">Borç Miktarı (TL)</label>
-            <input type="number" id="amount" name="amount" class="form-control" required/>
-        </div>
-        <div class="mb-3">
-            <label for="dueDate" class="form-label">Vade Tarihi</label>
-            <input type="datetime-local" id="dueDate" name="dueDate" class="form-control" required/>
-        </div>
-        <button type="submit" class="btn btn-primary">Borç Ekle</button>
-    </form>
+    <!-- Yeni Borç Girişi Formu -->
+    <div class="card mb-4">
+        <div class="card-header">Yeni Borç Girişi</div>
+        <div class="card-body">
+            <form th:action="@{/debts/add}" method="post" enctype="multipart/form-data">
+                <!-- Borç Alan Müşteri -->
+                <div class="mb-3">
+                    <label for="debtorId" class="form-label">Borç Alan Müşteri</label>
+                    <select id="debtorId" name="debtorId" class="form-control" required>
+                        <option value="" disabled selected>Müşteri seçin</option>
+                        <option th:each="customer : ${customers}"
+                                th:value="${customer.id}"
+                                th:text="${customer.firstName + ' ' + customer.lastName}">
+                        </option>
+                    </select>
+                </div>
+                <!-- Borç Veren Müşteri -->
+                <div class="mb-3">
+                    <label for="creditorId" class="form-label">Borç Veren Müşteri</label>
+                    <select id="creditorId" name="creditorId" class="form-control" required>
+                        <option value="" disabled selected>Müşteri seçin</option>
+                        <option th:each="customer : ${customers}"
+                                th:value="${customer.id}"
+                                th:text="${customer.firstName + ' ' + customer.lastName}">
+                        </option>
+                    </select>
+                </div>
+                <!-- ... diğer form alanları ... -->
 
-    <!-- Borç Arama -->
-    <form th:action="@{/debts/search}" method="get" class="mb-4">
-        <input type="text" name="customerName" placeholder="Müşteri adı ile ara" class="form-control" oninput="this.value = this.value.toUpperCase()"/>
-        <button type="submit" class="btn btn-primary mt-2">Ara</button>
-    </form>
+                <!-- Borç Türü -->
+                <div class="mb-3">
+                    <label for="debtType" class="form-label">Borç Türü</label>
+                    <select id="debtType" name="debtType" class="form-control" required>
+                        <option value="CASH">NAKIT</option>
+                        <option value="BILL">SENET</option>
+                        <option value="PRODUCT">MAL</option>
+                        <option value="CREDIT_CARD">KREDI KARTI</option>
+                        <option value="CHECK">ÇEK</option>
+                    </select>
+                </div>
 
-    <!-- Borç Listeleme -->
-    <table class="table table-bordered table-striped">
-        <thead class="table-dark">
-        <tr>
-            <th>#</th>
-            <th>Müşteri Adı</th>
-            <th>Ürün Adı</th>
-            <th>Borç Miktarı</th>
-            <th>Vade Tarihi</th>
-            <th>Ödeme Durumu</th>
-            <th>İşlemler</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr th:each="debt : ${debts}">
-            <td th:text="${debt.id}"></td>
-            <td>
-                <span th:if="${debt.customer != null}" th:text="${debt.customer.firstName+ ' ' + debt.customer.lastName}"></span>
-                <span th:if="${debt.customer == null}">Veritabanında hiç müşteri yok</span>
-            </td>
-            <td>
-                <span th:if="${debt.product != null}" th:text="${debt.product.name}"></span>
-                <span th:if="${debt.product == null}">Ürün Bilgisi Yok</span>
-            </td>
-            <td th:text="${debt.amount + ' TL'}"></td>
-            <td th:text="${#temporals.format(debt.dueDate, 'dd MMMM yyyy EEEE - HH:mm ')}"></td>
-            <td th:text="${debt.isPaid ? 'Ödendi' : 'Ödenmedi'}"></td>
-            <td>
-                <form th:action="@{/debts/pay/{id}(id=${debt.id})}" method="post">
-                    <button type="submit" th:if="${!debt.isPaid}" class="btn btn-success">Ödeme Yap</button>
-                </form>
-            </td>
-        </tr>
-        </tbody>
-    </table>
+                <!-- ... diğer form alanları ... -->
+
+                <!-- Ürün Seçimi (Borç Türü MAL ise) -->
+                <div class="mb-3">
+                    <label for="productId" class="form-label">Ürün Seç</label>
+                    <select id="productId" name="productId" class="form-control">
+                        <option value="" disabled selected>Ürün seçin (Varsa)</option>
+                        <option th:each="product : ${products}"
+                                th:value="${product.id}"
+                                th:text="${product.name}">
+                        </option>
+                    </select>
+                </div>
+                <!-- Borç Miktarı -->
+                <div class="mb-3">
+                    <label for="amount" class="form-label">Borç Miktarı (TL)</label>
+                    <input type="number" id="amount" name="amount" class="form-control" required/>
+                </div>
+                <!-- Vade Tarihi -->
+                <div class="mb-3">
+                    <label for="dueDate" class="form-label">Vade Tarihi</label>
+                    <input type="datetime-local" id="dueDate" name="dueDate" class="form-control" required/>
+                </div>
+                <!-- Belge Yükleme -->
+                <div class="mb-3">
+                    <label for="documentFile" class="form-label">Borç Belgesi Yükle</label>
+                    <input type="file" id="documentFile" name="documentFile" class="form-control"/>
+                </div>
+                <!-- Taksit Sayısı -->
+                <div class="mb-3">
+                    <label for="installments" class="form-label">Taksit Sayısı</label>
+                    <input type="number" id="installments" name="installments" class="form-control" min="1" placeholder="Varsa taksit sayısı girin"/>
+                </div>
+                <button type="submit" class="btn btn-primary">Borç Ekle</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Arama Bölümü: Borç Listelemenin hemen üstünde konumlandırıldı -->
+    <div class="mb-4">
+        <form th:action="@{/debts/search}" method="get">
+            <div class="input-group">
+                <input type="text" name="customerName" placeholder="Müşteri adı ile ara" class="form-control" oninput="this.value = this.value.toUpperCase()"/>
+                <button type="submit" class="btn btn-primary">Ara</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Borç Listeleme Tablosu -->
+    <div class="card">
+        <div class="card-header">Tüm Borçlar</div>
+        <div class="card-body">
+            <table class="table table-bordered table-striped">
+                <thead class="table-dark">
+                <tr>
+                    <th>#</th>
+                    <th>Borç Alan</th>
+                    <th>Borç Veren</th>
+                    <th>Ürün</th>
+                    <th>Miktar</th>
+                    <th>Vade Tarihi</th>
+                    <th>Ödeme Durumu</th>
+                    <th>Taksit Sayısı</th>
+                    <th>Belge</th>
+                    <th>İşlemler</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="debt : ${debts}">
+                    <td th:text="${debt.id}"></td>
+                    <td th:text="${debt.debtor != null ? debt.debtor.firstName + ' ' + debt.debtor.lastName : 'Bilinmiyor'}"></td>
+                    <td th:text="${debt.creditor != null ? debt.creditor.firstName + ' ' + debt.creditor.lastName : 'Bilinmiyor'}"></td>
+                    <td th:text="${debt.product != null ? debt.product.name : 'Yok'}"></td>
+                    <td th:text="${debt.amount + ' TL'}"></td>
+                    <td th:text="${#temporals.format(debt.dueDate, 'dd MMM yyyy HH:mm')}"></td>
+                    <td th:text="${debt.isPaid ? 'Ödendi' : 'Ödenmedi'}"></td>
+                    <td th:text="${debt.installments != null ? debt.installments.size() : 0}"></td>
+                    <td>
+                        <span th:if="${!debt.documents.empty}">
+                            <button type="button" class="btn btn-info btn-sm" 
+                                    data-bs-toggle="modal"
+                                    th:data-bs-target="'#documentsModal' + ${debt.id}">
+                                <i class="fas fa-file"></i> Belgeleri Görüntüle 
+                                <span class="badge bg-light text-dark" th:text="${debt.documents.size()}"></span>
+                            </button>
+                        </span>
+                        <span th:if="${debt.documents.empty}">Yok</span>
+                    </td>
+                    <td>
+                        <!-- Mevcut butonlar -->
+                        <a th:href="@{/debts/payment/{id}(id=${debt.id})}" methods="get" 
+                           class="btn btn-success btn-sm" th:if="${!debt.isPaid}">
+                            <i class="fas fa-money-bill"></i> Ödeme Yap
+                        </a>
+                        <button type="button" class="btn btn-info btn-sm" 
+                                data-bs-toggle="modal"
+                                th:data-bs-target="'#installmentsModal' + ${debt.id}"
+                                th:if="${debt.installments != null and !#lists.isEmpty(debt.installments)}">
+                            <i class="fas fa-list"></i> Taksitler
+                        </button>
+                        <!-- Yeni düzenleme butonu -->
+                        <a th:href="@{/debts/edit/{id}(id=${debt.id})}" 
+                           class="btn btn-warning btn-sm">
+                            <i class="fas fa-edit"></i> Düzenle
+                        </a>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(debts)}">
+                    <td colspan="10" class="text-center">Henüz borç kaydı bulunmamaktadır.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Taksit Modal Pencereleri -->
+    <div th:each="debt : ${debts}" th:id="'installmentsModal' + ${debt.id}" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Taksit Bilgileri - Borç ID: <span th:text="${debt.id}"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-bordered">
+                        <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Taksit Tutarı</th>
+                            <th>Vade Tarihi</th>
+                            <th>Ödeme Tarihi</th>
+                            <th>Ödeme Durumu</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="installment, iterStat : ${debt.installments}">
+                            <td th:text="${iterStat.index + 1}"></td>
+                            <td th:text="${installment.amount + ' TL'}"></td>
+                            <td th:text="${#temporals.format(installment.dueDate, 'dd MMM yyyy HH:mm')}"></td>
+                            <td th:text="${installment.paymentDate != null ? #temporals.format(installment.paymentDate, 'dd MMM yyyy HH:mm') : 'Henüz ödenmedi'}"></td>
+                            <td th:text="${installment.isPaid ? 'Ödendi' : 'Ödenmedi'}"></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Belgeler için Modal -->
+    <div th:each="debt : ${debts}" th:id="'documentsModal' + ${debt.id}" class="modal fade" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Borç Belgeleri</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div th:each="doc : ${debt.documents}" class="col-md-6 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title" th:text="${doc.fileName}"></h6>
+                                    <div class="btn-group">
+                                        <button class="btn btn-primary btn-sm" 
+                                                th:onclick="'viewDocument(' + ${doc.id} + ')'">
+                                            <i class="fas fa-eye"></i> Görüntüle
+                                        </button>
+                                        <a th:href="@{/debts/document/download/{id}(id=${doc.id})}" 
+                                           class="btn btn-secondary btn-sm">
+                                            <i class="fas fa-download"></i> İndir
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function viewDocument(docId) {
+    // Yeni pencere aç
+    const width = 800;
+    const height = 600;
+    const left = (screen.width - width) / 2;
+    const top = (screen.height - height) / 2;
+    
+    window.open(
+        `/debts/document/${docId}`,
+        'DocumentViewer',
+        `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,status=yes`
+    );
+}
+</script>
 </body>
 </html>

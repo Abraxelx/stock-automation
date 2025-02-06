@@ -15,22 +15,29 @@ public class SecurityConfig {
     ResourceBundle bundle = ResourceBundle.getBundle("messages", new Locale("en"));
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        String loginPath = bundle.getString("login.path");
+        String salesPath = bundle.getString("sales.path");
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(bundle.getString("sales.path")).authenticated()
                         .requestMatchers( "/", "/css/**", "/js/**", "/images/**").permitAll()
+                        .requestMatchers(loginPath).permitAll()
+                        .requestMatchers(salesPath).authenticated()
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
-                        .loginPage(bundle.getString("login.path"))
-                        .defaultSuccessUrl(bundle.getString("sales.path"), true)
+                        .loginPage(loginPath)
+                        .defaultSuccessUrl(salesPath, true)
                         .permitAll()
                 )
                 .logout(logout -> logout
                         .logoutUrl(bundle.getString("logout.path"))
-                        .logoutSuccessUrl(bundle.getString("login.path"))
+                        .logoutSuccessUrl(loginPath)
+                        .invalidateHttpSession(true)
+                        .deleteCookies("JSESSIONID")
                         .permitAll()
-                );
+                )
+                .sessionManagement(session -> session
+                        .invalidSessionUrl(loginPath));
         return http.build();
     }
 }

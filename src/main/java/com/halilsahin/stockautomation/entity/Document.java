@@ -18,10 +18,13 @@ public class Document {
 
     private String fileName;   // Belge adı
     private String filePath;   // Kaydedildiği dosya yolu
+    private String fileType;   // Dosya türü (PDF, IMAGE, vs.)
+    private String contentType; // MIME type
+    private Long fileSize;     // Dosya boyutu
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "debt_id")
-    private Debt debt; // İlgili borç
+    private Debt debt;
 
     @Override
     public final boolean equals(Object o) {
