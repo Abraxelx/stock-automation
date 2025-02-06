@@ -4,6 +4,7 @@ import com.halilsahin.stockautomation.constants.Constants;
 import com.halilsahin.stockautomation.entity.Product;
 import com.halilsahin.stockautomation.entity.Transaction;
 import com.halilsahin.stockautomation.enums.TransactionType;
+import com.halilsahin.stockautomation.enums.UnitType;
 import com.halilsahin.stockautomation.repository.ProductRepository;
 import com.halilsahin.stockautomation.repository.TransactionRepository;
 import com.halilsahin.stockautomation.service.ProductService;
@@ -14,7 +15,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/products")
@@ -36,24 +39,43 @@ public class ProductController {
         return Constants.PRODUCTS;
     }
 
+    @PostMapping("/check-barcode")
+    @ResponseBody
+    public Map<String, Object> checkBarcode(@RequestParam String barcode) {
+        Map<String, Object> response = new HashMap<>();
+        Product existingProduct = productService.findByBarcode(barcode);
+        
+        if (existingProduct != null) {
+            response.put("exists", true);
+            response.put("productId", existingProduct.getId());
+        } else {
+            response.put("exists", false);
+        }
+        
+        return response;
+    }
+
     @PostMapping
     public String addProduct(@RequestParam String name,
                              @RequestParam String barcode,
                              @RequestParam String description,
                              @RequestParam int stock,
+                             @RequestParam UnitType unitType,
                              @RequestParam double price,
                              @RequestParam double purchasePrice,
-                             Model model) {
-        if (productService.findByBarcode(barcode) != null) {
-            model.addAttribute("error", "Bu barkod zaten mevcut!");
-            model.addAttribute(Constants.PRODUCTS, productService.findAllByOrderByIdDesc());
-            return Constants.PRODUCTS;
+                             RedirectAttributes redirectAttributes) {
+        Product existingProduct = productService.findByBarcode(barcode);
+        if (existingProduct != null) {
+            redirectAttributes.addFlashAttribute("error", 
+                "Bu barkod zaten mevcut! Ürün düzenleme sayfasına yönlendiriliyorsunuz.");
+            return "redirect:/products/edit/" + existingProduct.getId();
         }
 
         Product product = new Product();
         product.setName(name);
         product.setBarcode(barcode);
         product.setStock(stock);
+        product.setUnitType(unitType);
         product.setPrice(price);
         product.setPurchasePrice(purchasePrice);
 
@@ -70,9 +92,9 @@ public class ProductController {
         transactionRepository.save(transaction);
         productRepository.save(product);
 
-        model.addAttribute("success", "Ürün başarıyla eklendi!");
-        model.addAttribute(Constants.PRODUCTS, productRepository.findAllByOrderByIdDesc());
-        return Constants.PRODUCTS;
+        redirectAttributes.addFlashAttribute("success", "Ürün başarıyla eklendi!");
+        redirectAttributes.addFlashAttribute(Constants.PRODUCTS, productRepository.findAllByOrderByIdDesc());
+        return "redirect:/products";
     }
 
     @GetMapping("/search")
