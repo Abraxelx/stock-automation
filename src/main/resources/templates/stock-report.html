@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Stok Raporu</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .dashboard-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+        }
+        .card-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+        .card-title {
+            font-size: 1.1rem;
+            color: #6c757d;
+            margin-bottom: 10px;
+        }
+        .card-value {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .profit {
+            color: #2ecc71;
+        }
+        .cost {
+            color: #e74c3c;
+        }
+        .potential {
+            color: #3498db;
+        }
+        .table-section {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .page-title {
+            color: #2c3e50;
+            margin-bottom: 25px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div th:insert="~{fragments/navbar.html :: navbar}"></div>
+
+    <div class="container mt-5">
+        <!-- Özet Kartları -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="dashboard-card">
+                    <i class="fas fa-shopping-cart card-icon cost"></i>
+                    <div class="card-title">Toplam Alış Değeri</div>
+                    <div class="card-value">
+                        <span th:text="${#numbers.formatDecimal(totalPurchaseValue, 0, 'COMMA', 2, 'POINT')}"></span> TL
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="dashboard-card">
+                    <i class="fas fa-tags card-icon potential"></i>
+                    <div class="card-title">Toplam Satış Değeri</div>
+                    <div class="card-value">
+                        <span th:text="${#numbers.formatDecimal(totalSaleValue, 0, 'COMMA', 2, 'POINT')}"></span> TL
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="dashboard-card">
+                    <i class="fas fa-chart-line card-icon profit"></i>
+                    <div class="card-title">Potansiyel Kar</div>
+                    <div class="card-value">
+                        <span th:text="${#numbers.formatDecimal(potentialProfit, 0, 'COMMA', 2, 'POINT')}"></span> TL
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ürün Tablosu -->
+        <div class="table-section">
+            <h2 class="page-title">
+                <i class="fas fa-boxes"></i> Stok Detayları
+            </h2>
+            <!-- Filtreleme Seçenekleri -->
+            <div class="mb-4">
+                <div class="btn-group">
+                    <button class="btn btn-outline-primary" onclick="sortTable('stock', 'asc')">
+                        <i class="fas fa-sort-amount-up"></i> Stok (Az-Çok)
+                    </button>
+                    <button class="btn btn-outline-primary" onclick="sortTable('stock', 'desc')">
+                        <i class="fas fa-sort-amount-down"></i> Stok (Çok-Az)
+                    </button>
+                    <button class="btn btn-outline-primary" onclick="sortTable('value', 'desc')">
+                        <i class="fas fa-dollar-sign"></i> Değer (Yüksek-Düşük)
+                    </button>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Ürün Adı</th>
+                            <th>Barkod</th>
+                            <th>Stok</th>
+                            <th>Birim</th>
+                            <th>Alış Fiyatı</th>
+                            <th>Toplam Alış</th>
+                            <th>Satış Fiyatı</th>
+                            <th>Toplam Satış</th>
+                            <th>Kar Marjı</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="product : ${products}">
+                            <td th:text="${product.name}"></td>
+                            <td th:text="${product.barcode}"></td>
+                            <td th:text="${product.stock}"></td>
+                            <td th:text="${product.unitType != null ? product.unitType.displayName : 'ADET'}"></td>
+                            <td th:text="${product.purchasePrice} + ' TL'"></td>
+                            <td th:text="${#numbers.formatDecimal(product.stock * product.purchasePrice, 0, 'COMMA', 2, 'POINT')} + ' TL'"></td>
+                            <td th:text="${product.price} + ' TL'"></td>
+                            <td th:text="${#numbers.formatDecimal(product.stock * product.price, 0, 'COMMA', 2, 'POINT')} + ' TL'"></td>
+                            <td th:text="${#numbers.formatDecimal((product.price - product.purchasePrice) * product.stock, 0, 'COMMA', 2, 'POINT')} + ' TL'"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Kritik Stok Uyarısı -->
+        <div class="alert alert-warning mt-4" th:if="${not #lists.isEmpty(criticalProducts)}">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Kritik Stok Uyarısı!</strong>
+                    <span th:text="${#lists.size(criticalProducts)} + ' ürün kritik stok seviyesinin altında!'"></span>
+                </div>
+                <button class="btn btn-sm btn-warning" type="button" data-bs-toggle="collapse" 
+                        data-bs-target="#criticalStockList">
+                    <i class="fas fa-eye"></i> Kritik Ürünleri Göster
+                </button>
+            </div>
+            <div class="collapse mt-3" id="criticalStockList">
+                <div class="table-responsive">
+                    <table class="table table-sm table-warning">
+                        <thead>
+                            <tr>
+                                <th>Ürün Adı</th>
+                                <th>Barkod</th>
+                                <th>Mevcut Stok</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="product : ${criticalProducts}">
+                                <td th:text="${product.name}"></td>
+                                <td th:text="${product.barcode}"></td>
+                                <td th:text="${product.stock}"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- En Değerli Ürünler -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="dashboard-card">
+                    <h3 class="page-title">
+                        <i class="fas fa-crown"></i> En Değerli 5 Ürün
+                    </h3>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Ürün</th>
+                                    <th>Stok Değeri</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="product : ${mostValuableProducts}">
+                                    <td th:text="${product.name}"></td>
+                                    <td th:text="${#numbers.formatDecimal(product.stock * product.price, 0, 'COMMA', 2, 'POINT')} + ' TL'"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    function sortTable(column, direction) {
+        const table = document.querySelector('.table');
+        const tbody = table.querySelector('tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+
+        rows.sort((a, b) => {
+            let aVal, bVal;
+            
+            if (column === 'stock') {
+                aVal = parseInt(a.cells[2].textContent);
+                bVal = parseInt(b.cells[2].textContent);
+            } else if (column === 'value') {
+                aVal = parseFloat(a.cells[7].textContent.replace(' TL', '').replace(',', ''));
+                bVal = parseFloat(b.cells[7].textContent.replace(' TL', '').replace(',', ''));
+            }
+
+            return direction === 'asc' ? aVal - bVal : bVal - aVal;
+        });
+
+        tbody.innerHTML = '';
+        rows.forEach(row => tbody.appendChild(row));
+    }
+    </script>
+</body>
+</html> 

@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ProductService {
@@ -59,5 +60,37 @@ public class ProductService {
             }
         }
         return products;
+    }
+
+    public double calculateTotalPurchaseValue() {
+        return productRepository.findAll().stream()
+                .mapToDouble(p -> p.getPurchasePrice() * p.getStock())
+                .sum();
+    }
+
+    public double calculateTotalSaleValue() {
+        return productRepository.findAll().stream()
+                .mapToDouble(p -> p.getPrice() * p.getStock())
+                .sum();
+    }
+
+    public List<Product> findAllByOrderByStockDesc() {
+        return productRepository.findAllByOrderByStockDesc();
+    }
+
+    public List<Product> findCriticalStockProducts() {
+        return productRepository.findAll().stream()
+                .filter(p -> p.getStock() <= 5)
+                .collect(Collectors.toList());
+    }
+
+    public List<Product> findAllByStockValue() {
+        return productRepository.findAll().stream()
+                .sorted((p1, p2) -> {
+                    double value1 = p1.getStock() * p1.getPrice();
+                    double value2 = p2.getStock() * p2.getPrice();
+                    return Double.compare(value2, value1);
+                })
+                .collect(Collectors.toList());
     }
 }
