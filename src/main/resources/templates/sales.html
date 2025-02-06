@@ -4,81 +4,146 @@
   <meta charset="UTF-8">
   <title>Satış</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" 
+        integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" 
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <style>
+    .form-section {
+      background-color: #f8f9fa;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 30px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .table-section {
+      background-color: white;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .page-title {
+      color: #2c3e50;
+      margin-bottom: 25px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #3498db;
+    }
+    .total-section {
+      background-color: #e9ecef;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 20px;
+      margin-bottom: 20px;
+    }
+    .quantity-input {
+      max-width: 80px;
+    }
+  </style>
 </head>
-<body>
+<body class="bg-light">
 <!-- Navbar -->
 <div th:insert="~{fragments/navbar.html :: navbar}"></div>
 
-<div class="container mt-4">
+<div class="container mt-5">
   <div th:if="${error}" class="alert alert-danger" role="alert">
+    <i class="fas fa-exclamation-circle"></i>
     <span th:text="${error}"></span>
   </div>
   <!-- Satış Ekleme Formu -->
-  <h2>Yeni Satış</h2>
-  <form th:action="@{/sales}" method="post" class="row g-3">
-    <!-- Barkod Girişi -->
-    <div class="col-md-4">
-      <label for="barcode" class="form-label">Barkod</label>
-      <input type="text" class="form-control" id="barcode" name="barcode" placeholder="Barkod" required autofocus>
-    </div>
+  <div class="form-section">
+    <h2 class="page-title">
+      <i class="fas fa-shopping-cart"></i> Yeni Satış
+    </h2>
+    <form th:action="@{/sales}" method="post" class="row g-3">
+      <!-- Barkod Girişi -->
+      <div class="col-md-5">
+        <label for="barcode" class="form-label">
+          <i class="fas fa-barcode"></i> Barkod
+        </label>
+        <input type="text" class="form-control" id="barcode" name="barcode" placeholder="Barkod okutun veya girin" required autofocus>
+      </div>
 
-    <!-- Miktar Girişi -->
-    <div class="col-md-4">
-      <label for="quantity" class="form-label">Miktar</label>
-      <input type="number" class="form-control" id="quantity" name="quantity" placeholder="Miktar" min="1" value="1" required autocomplete="off">
-    </div>
+      <!-- Miktar Girişi -->
+      <div class="col-md-4">
+        <label for="quantity" class="form-label">
+          <i class="fas fa-cubes"></i> Miktar
+        </label>
+        <input type="number" class="form-control" id="quantity" name="quantity" placeholder="Miktar" min="1" value="1" required autocomplete="off">
+      </div>
 
-    <!-- Ürün Ekle Butonu -->
-    <div class="col-md-4 align-self-end">
-      <button type="submit" class="btn btn-primary">Ürün Ekle</button>
-    </div>
-  </form>
+      <!-- Ürün Ekle Butonu -->
+      <div class="col-md-3 align-self-end">
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="fas fa-plus"></i> Ürün Ekle
+        </button>
+      </div>
+    </form>
+  </div>
 
   <hr>
 
   <!-- Satış Detayları -->
-  <h3>Sepet</h3>
-  <table class="table table-bordered">
-    <thead>
-    <tr>
-      <th>#</th>
-      <th>Ürün Adı</th>
-      <th>Barkod</th>
-      <th>Miktar</th>
-      <th>Birim Fiyat</th>
-      <th>Ara Toplam</th>
-      <th>Sil</th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr th:each="item, iterStat : ${saleItems}">
-      <td th:text="${iterStat.count}"></td>
-      <td th:text="${item.product.name}"></td>
-      <td th:text="${item.product.barcode}"></td>
-      <td>
-        <!-- Miktar Güncelleme Input -->
-        <form th:action="@{/sales/updateQuantity}" method="post" class="d-inline">
-          <input type="hidden" name="barcode" th:value="${item.product.barcode}">
-          <input type="number" class="form-control d-inline w-50" name="quantity" th:value="${item.quantity}" min="1" onchange="this.form.submit()" autocomplete="off">
-        </form>
-      </td>
-      <td th:text="${item.unitPrice} + ' TL'"></td>
-      <td th:text="${item.subtotal} + ' TL'"></td>
-      <td>
-        <a th:href="@{/sales/item/{barcode}(barcode=${item.product.barcode})}" class="btn btn-danger btn-sm">Sil</a>
-      </td>
-    </tr>
-    </tbody>
-  </table>
+  <div class="table-section">
+    <h3 class="page-title">
+      <i class="fas fa-shopping-basket"></i> Sepet
+    </h3>
+    <div class="table-responsive">
+      <table class="table table-hover">
+        <thead class="table-light">
+          <tr>
+            <th>#</th>
+            <th>Ürün Adı</th>
+            <th>Barkod</th>
+            <th>Miktar</th>
+            <th>Birim Fiyat</th>
+            <th>Ara Toplam</th>
+            <th>İşlem</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="item, iterStat : ${saleItems}">
+            <td th:text="${iterStat.count}"></td>
+            <td th:text="${item.product.name}"></td>
+            <td th:text="${item.product.barcode}"></td>
+            <td>
+              <form th:action="@{/sales/updateQuantity}" method="post" class="d-inline">
+                <input type="hidden" name="barcode" th:value="${item.product.barcode}">
+                <input type="number" class="form-control quantity-input" name="quantity" th:value="${item.quantity}" min="1" onchange="this.form.submit()" autocomplete="off">
+              </form>
+            </td>
+            <td th:text="${item.unitPrice} + ' TL'"></td>
+            <td th:text="${item.subtotal} + ' TL'"></td>
+            <td>
+              <a th:href="@{/sales/item/{barcode}(barcode=${item.product.barcode})}" class="btn btn-danger btn-sm">
+                <i class="fas fa-trash"></i>
+              </a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
-  <!-- Toplam Tutar -->
-  <h4>Toplam: <span th:text="${total} + ' TL'"></span></h4>
-
-  <!-- Satışı Tamamla -->
-  <form th:action="@{/sales/complete}" method="post">
-    <button type="submit" class="btn btn-success">Satışı Tamamla</button>
-    <a href="/sales/reset" class="btn btn-secondary">Sepeti Temizle</a>
-  </form>
+    <!-- Toplam Tutar -->
+    <div class="total-section">
+      <div class="row align-items-center">
+        <div class="col-md-6">
+          <h4 class="mb-0">
+            <i class="fas fa-calculator"></i> 
+            Toplam: <span class="text-primary" th:text="${total} + ' TL'"></span>
+          </h4>
+        </div>
+        <div class="col-md-6 text-end">
+          <form th:action="@{/sales/complete}" method="post" class="d-inline">
+            <button type="submit" class="btn btn-success">
+              <i class="fas fa-check-circle"></i> Satışı Tamamla
+            </button>
+          </form>
+          <a href="/sales/reset" class="btn btn-secondary">
+            <i class="fas fa-trash-alt"></i> Sepeti Temizle
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

@@ -3,45 +3,147 @@
 <head>
     <title>Yeni Müşteri Ekle</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .form-section {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .page-title {
+            color: #2c3e50;
+            margin-bottom: 25px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+        }
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+        .form-label {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: #2c3e50;
+        }
+        .form-control {
+            border-radius: 6px;
+            border: 1px solid #ced4da;
+            padding: 0.6rem 1rem;
+            transition: all 0.3s ease;
+        }
+        .form-control:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 0.2rem rgba(52,152,219,0.25);
+        }
+        textarea.form-control {
+            min-height: 100px;
+        }
+    </style>
 </head>
-<body>
+<body class="bg-light">
 <div th:insert="~{fragments/navbar.html :: navbar}"></div>
 
 <div class="container mt-5">
-    <h2 class="text-center">Yeni Müşteri Ekle</h2>
-    <form th:action="@{/customers/save}" method="post">
-        <div class="form-group">
-            <label for="firstName">Ad:</label>
-            <input type="text" class="form-control" id="firstName" name="firstName" required oninput="this.value = this.value.toUpperCase()">
-        </div>
+    <div class="form-section">
+        <h2 class="page-title text-center">
+            <i class="fas fa-user-plus"></i> Yeni Müşteri Ekle
+        </h2>
+        
+        <form th:action="@{/customers/save}" method="post" class="row g-3">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="firstName" class="form-label">
+                        <i class="fas fa-user"></i> Ad
+                    </label>
+                    <input type="text" class="form-control" id="firstName" name="firstName" 
+                           required oninput="this.value = this.value.toUpperCase()"
+                           placeholder="Müşteri adını girin">
+                </div>
+            </div>
 
-        <div class="form-group">
-            <label for="lastName">Soyad:</label>
-            <input type="text" class="form-control" id="lastName" name="lastName" required oninput="this.value = this.value.toUpperCase()">
-        </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="lastName" class="form-label">
+                        <i class="fas fa-user"></i> Soyad
+                    </label>
+                    <input type="text" class="form-control" id="lastName" name="lastName" 
+                           required oninput="this.value = this.value.toUpperCase()"
+                           placeholder="Müşteri soyadını girin">
+                </div>
+            </div>
 
-        <div class="form-group">
-            <label for="phoneNumber">Telefon:</label>
-            <input type="text" class="form-control" id="phoneNumber" name="phoneNumber" required>
-        </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="phoneNumber" class="form-label">
+                        <i class="fas fa-phone"></i> Telefon
+                    </label>
+                    <input type="tel" class="form-control" id="phoneNumber" name="phoneNumber" 
+                           required placeholder="05XX XXX XX XX">
+                </div>
+            </div>
 
-        <div class="form-group">
-            <label for="address">Adres:</label>
-            <input type="text" class="form-control" id="address" name="address" required oninput="this.value = this.value.toUpperCase()">
-        </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="email" class="form-label">
+                        <i class="fas fa-envelope"></i> E-mail
+                    </label>
+                    <input type="email" class="form-control" id="email" name="email" 
+                           placeholder="ornek@email.com">
+                </div>
+            </div>
 
-        <div class="form-group">
-            <label for="email">E-mail:</label>
-            <input type="email" class="form-control" id="email" name="email" >
-        </div>
+            <div class="col-12">
+                <div class="form-group">
+                    <label for="address" class="form-label">
+                        <i class="fas fa-map-marker-alt"></i> Adres
+                    </label>
+                    <input type="text" class="form-control" id="address" name="address" 
+                           required oninput="this.value = this.value.toUpperCase()"
+                           placeholder="Tam adres bilgisi">
+                </div>
+            </div>
 
-        <div class="form-group">
-            <label for="notes">Notlar:</label>
-            <textarea class="form-control" id="notes" name="notes" oninput="this.value = this.value.toUpperCase()"></textarea>
-        </div>
+            <div class="col-12">
+                <div class="form-group">
+                    <label for="notes" class="form-label">
+                        <i class="fas fa-sticky-note"></i> Notlar
+                    </label>
+                    <textarea class="form-control" id="notes" name="notes" 
+                             oninput="this.value = this.value.toUpperCase()"
+                             placeholder="Müşteri ile ilgili ekstra notlar..."></textarea>
+                </div>
+            </div>
 
-        <button type="submit" class="btn btn-success mt-3">Müşteri Ekle</button>
-    </form>
+            <div class="col-12 text-center mt-4">
+                <button type="submit" class="btn btn-success btn-lg">
+                    <i class="fas fa-save"></i> Müşteri Ekle
+                </button>
+                <a href="/customers" class="btn btn-secondary btn-lg ms-2">
+                    <i class="fas fa-arrow-left"></i> Geri Dön
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Hata veya Başarı Mesajları -->
+    <div th:if="${error}" class="alert alert-danger mt-3" role="alert">
+        <i class="fas fa-exclamation-circle"></i>
+        <span th:text="${error}"></span>
+    </div>
+    <div th:if="${success}" class="alert alert-success mt-3" role="alert">
+        <i class="fas fa-check-circle"></i>
+        <span th:text="${success}"></span>
+    </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Telefon numarası formatı için
+document.getElementById('phoneNumber').addEventListener('input', function(e) {
+    let x = e.target.value.replace(/\D/g, '').match(/(\d{0,3})(\d{0,3})(\d{0,2})(\d{0,2})/);
+    e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? ' ' + x[3] : '') + (x[4] ? ' ' + x[4] : '');
+});
+</script>
 </body>
 </html>
