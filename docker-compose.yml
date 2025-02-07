@@ -20,7 +20,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: spring-app-image:latest
+    image: abraxel/stock-automation:latest
     container_name: spring-app-container
     ports:
       - "8080:8080"
