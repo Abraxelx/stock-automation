@@ -128,7 +128,17 @@ public class ProductController {
     @PostMapping("/update")
     public String updateProduct(@ModelAttribute("product") Product product, RedirectAttributes redirectAttributes) {
         try {
-            productService.updateProduct(product);
+            Product existingProduct = productService.findById(product.getId());
+            // Diğer alanları güncelle
+            existingProduct.setName(product.getName());
+            existingProduct.setBarcode(product.getBarcode());
+            existingProduct.setStock(product.getStock());
+            existingProduct.setPrice(product.getPrice());
+            existingProduct.setPurchasePrice(product.getPurchasePrice());
+            existingProduct.setDescription(product.getDescription());
+            existingProduct.setUnitType(product.getUnitType());  // UnitType'ı güncelle
+            
+            productService.updateProduct(existingProduct);
             redirectAttributes.addFlashAttribute("success", "Ürün başarıyla güncellendi.");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Ürün güncellenirken bir hata oluştu.");
