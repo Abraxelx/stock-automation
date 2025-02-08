@@ -145,8 +145,12 @@
                     <th>Barkod</th>
                     <th>Ürün Adı</th>
                     <th>Stok</th>
-                    <th>Alış Fiyatı</th>
-                    <th>Satış Fiyatı</th>
+                    <th style="cursor: pointer;" onclick="sortTableByPrice('purchasePrice')">
+                        Alış Fiyatı <i class="fas fa-sort"></i>
+                    </th>
+                    <th style="cursor: pointer;" onclick="sortTableByPrice('price')">
+                        Satış Fiyatı <i class="fas fa-sort"></i>
+                    </th>
                     <th>İşlemler</th>
                 </tr>
                 </thead>
@@ -226,6 +230,44 @@ document.querySelector('form').onsubmit = function(e) {
         document.getElementById('barcode').focus();
     }
 };
+
+function sortTableByPrice(column) {
+    const table = document.querySelector('table');
+    const tbody = table.querySelector('tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    
+    // Sıralama yönünü belirle (ilk tıklama yüksekten düşüğe)
+    const sortDirection = tbody.dataset.sortDir === 'desc' ? 'asc' : 'desc';
+    tbody.dataset.sortDir = sortDirection;
+    
+    rows.sort((a, b) => {
+        let aValue, bValue;
+        
+        if (column === 'purchasePrice') {
+            aValue = parseFloat(a.cells[4].textContent.replace(' TL', ''));
+            bValue = parseFloat(b.cells[4].textContent.replace(' TL', ''));
+        } else {
+            aValue = parseFloat(a.cells[5].textContent.replace(' TL', ''));
+            bValue = parseFloat(b.cells[5].textContent.replace(' TL', ''));
+        }
+        
+        return sortDirection === 'desc' ? bValue - aValue : aValue - bValue;
+    });
+    
+    // Tabloyu güncelle
+    tbody.innerHTML = '';
+    rows.forEach(row => tbody.appendChild(row));
+    
+    // Sıralama ikonunu güncelle
+    const icons = document.querySelectorAll('th i.fas');
+    icons.forEach(icon => icon.className = 'fas fa-sort');
+    
+    const clickedHeader = column === 'purchasePrice' ? 
+        document.querySelector('th:nth-child(5) i') : 
+        document.querySelector('th:nth-child(6) i');
+        
+    clickedHeader.className = `fas fa-sort-${sortDirection === 'desc' ? 'down' : 'up'}`;
+}
 </script>
 </body>
 </html>
