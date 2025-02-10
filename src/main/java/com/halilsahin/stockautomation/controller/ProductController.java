@@ -21,6 +21,7 @@ import java.util.Map;
 
 @Controller
 @RequestMapping("/products")
+@CrossOrigin
 public class ProductController {
 
     private final ProductRepository productRepository;
@@ -39,20 +40,28 @@ public class ProductController {
         return Constants.PRODUCTS;
     }
 
-    @PostMapping("/check-barcode")
+    @PostMapping(value = "/check-barcode", produces = "application/json")
     @ResponseBody
     public Map<String, Object> checkBarcode(@RequestParam String barcode) {
-        Map<String, Object> response = new HashMap<>();
-        Product existingProduct = productService.findByBarcode(barcode);
-        
-        if (existingProduct != null) {
-            response.put("exists", true);
-            response.put("productId", existingProduct.getId());
-        } else {
-            response.put("exists", false);
+        try {
+            Map<String, Object> response = new HashMap<>();
+            Product existingProduct = productService.findByBarcode(barcode);
+            
+            if (existingProduct != null) {
+                response.put("exists", true);
+                response.put("productId", existingProduct.getId());
+            } else {
+                response.put("exists", false);
+            }
+            
+            return response;
+        } catch (Exception e) {
+            // Log the actual error
+            e.printStackTrace();
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", e.getMessage());
+            return errorResponse;
         }
-        
-        return response;
     }
 
     @PostMapping

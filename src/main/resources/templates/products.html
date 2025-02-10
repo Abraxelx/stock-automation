@@ -2,6 +2,8 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="tr">
 <head>
     <meta charset="UTF-8">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <title>Ürünler</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
@@ -46,7 +48,8 @@
                         <i class="fas fa-barcode"></i> Barkod
                     </label>
                     <input type="text" class="form-control" id="barcode" name="barcode" 
-                           placeholder="Barkod girin" required autofocus>
+                           placeholder="Barkod girin" required autofocus
+                           maxlength="13" oninput="checkBarcode(this.value)">
                 </div>
 
                 <!-- Ürün Adı -->
@@ -267,6 +270,48 @@ function sortTableByPrice(column) {
         document.querySelector('th:nth-child(6) i');
         
     clickedHeader.className = `fas fa-sort-${sortDirection === 'desc' ? 'down' : 'up'}`;
+}
+
+function checkBarcode(barcode) {
+    if (barcode.length === 13) {
+        const token = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+        const header = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+
+        fetch('/products/check-barcode', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                [header]: token
+            },
+            body: 'barcode=' + encodeURIComponent(barcode)
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => {
+                    console.log('Error response:', text);
+                    throw new Error('Server error: ' + text);
+                });
+            }
+            return response.text().then(text => {
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    console.log('Response text:', text);
+                    throw new Error('Invalid JSON response');
+                }
+            });
+        })
+        .then(data => {
+            console.log('Parsed data:', data);
+            if (data.exists) {
+                window.location.href = '/products/edit/' + data.productId;
+            }
+        })
+        .catch(error => {
+            console.error('Hata detayı:', error);
+            console.error('Hata mesajı:', error.message);
+        });
+    }
 }
 </script>
 </body>
