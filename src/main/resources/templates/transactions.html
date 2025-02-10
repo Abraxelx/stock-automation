@@ -37,9 +37,12 @@
     <!-- Filtreleme Bölümü -->
     <div class="filter-section mb-4">
       <form th:action="@{/transactions}" method="get" class="row g-3">
+        <input type="hidden" name="page" value="0">
+        <input type="hidden" name="sortBy" th:value="${sortBy}">
+        <input type="hidden" name="direction" th:value="${direction}">
         <div class="col-md-4">
           <label class="form-label">İşlem Tipi</label>
-          <select name="type" class="form-select">
+          <select name="type" class="form-select" th:value="${type}">
             <option value="">Tümü</option>
             <option value="SALE">SATIŞ</option>
             <option value="STOCK_IN">STOK GİRİŞİ</option>
@@ -50,11 +53,11 @@
         </div>
         <div class="col-md-4">
           <label class="form-label">Başlangıç Tarihi</label>
-          <input type="date" name="startDate" class="form-control">
+          <input type="date" name="startDate" class="form-control" th:value="${startDate}">
         </div>
         <div class="col-md-4">
           <label class="form-label">Bitiş Tarihi</label>
-          <input type="date" name="endDate" class="form-control">
+          <input type="date" name="endDate" class="form-control" th:value="${endDate}">
         </div>
         <div class="col-12">
           <button type="submit" class="btn btn-primary">
@@ -107,6 +110,53 @@
         </tr>
         </tbody>
       </table>
+
+      <!-- Pagination -->
+      <div class="d-flex justify-content-between align-items-center mt-4">
+        <div>
+          Toplam <span th:text="${totalItems}"></span> işlem,
+          Sayfa <span th:text="${currentPage + 1}"></span> / <span th:text="${totalPages}"></span>
+        </div>
+        
+        <nav th:if="${totalPages > 1}">
+          <ul class="pagination mb-0">
+            <!-- İlk Sayfa -->
+            <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+              <a class="page-link" th:href="@{/transactions(page=0,sortBy=${sortBy},direction=${direction})}">
+                <i class="fas fa-angle-double-left"></i>
+              </a>
+            </li>
+            
+            <!-- Önceki Sayfa -->
+            <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+              <a class="page-link" th:href="@{/transactions(page=${currentPage - 1},sortBy=${sortBy},direction=${direction})}">
+                <i class="fas fa-angle-left"></i>
+              </a>
+            </li>
+            
+            <!-- Sayfa Numaraları -->
+            <li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+                th:classappend="${currentPage == i} ? 'active'">
+              <a class="page-link" th:href="@{/transactions(page=${i},sortBy=${sortBy},direction=${direction})}"
+                 th:text="${i + 1}"></a>
+            </li>
+            
+            <!-- Sonraki Sayfa -->
+            <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
+              <a class="page-link" th:href="@{/transactions(page=${currentPage + 1},sortBy=${sortBy},direction=${direction})}">
+                <i class="fas fa-angle-right"></i>
+              </a>
+            </li>
+            
+            <!-- Son Sayfa -->
+            <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
+              <a class="page-link" th:href="@{/transactions(page=${totalPages - 1},sortBy=${sortBy},direction=${direction})}">
+                <i class="fas fa-angle-double-right"></i>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
     </div>
   </div>
 </div>
