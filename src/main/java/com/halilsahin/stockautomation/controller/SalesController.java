@@ -166,11 +166,11 @@ public class SalesController {
         sale.setTotal(total);
         sale.setDiscountRate(discountRate);
         sale.setFinalTotal(finalTotal);
-        sale = saleRepository.save(sale); // Veritabanına kaydet
+        sale = saleRepository.save(sale);
 
         // Her bir SaleItem için ilişkiyi kaydet
         for (SaleItem saleItem : saleItems) {
-            saleItem.setSale(sale); // Satış ilişkisini bağla
+            saleItem.setSale(sale);
             saleItemRepository.save(saleItem);
 
             // Stok güncelle
@@ -179,10 +179,12 @@ public class SalesController {
 
             Transaction transaction = new Transaction();
             transaction.setTransactionType(TransactionType.SALE);
-            transaction.setAmount(total);
+            transaction.setAmount(finalTotal);
             transaction.setRelatedEntity("SALE");
             transaction.setDate(LocalDateTime.now());
-            transaction.setDescription(saleItem.getQuantity() + ": Adet " + saleItem.getProduct().getName()+ "satıldı");
+            String discountInfo = discountRate > 0 ? String.format(" (%%%.1f iskonto uygulandı)", discountRate) : "";
+            transaction.setDescription(saleItem.getQuantity() + " Adet " + saleItem.getProduct().getName() + 
+                " satıldı" + discountInfo);
             transactionRepository.save(transaction);
             productRepository.save(product);
         }
