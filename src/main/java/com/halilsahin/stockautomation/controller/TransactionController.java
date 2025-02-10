@@ -1,8 +1,7 @@
 package com.halilsahin.stockautomation.controller;
 
 import com.halilsahin.stockautomation.entity.Transaction;
-import com.halilsahin.stockautomation.enums.TransactionType;
-import com.halilsahin.stockautomation.repository.TransactionRepository;
+import com.halilsahin.stockautomation.service.TransactionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -13,19 +12,15 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.List;
-
 @Controller
 public class TransactionController {
 
-    private final TransactionRepository transactionRepository;
+    private final TransactionService transactionService;
     private static final int PAGE_SIZE = 20; // Sayfa başına gösterilecek işlem sayısı
 
     @Autowired
-    public TransactionController(TransactionRepository transactionRepository) {
-        this.transactionRepository = transactionRepository;
+    public TransactionController(TransactionService transactionService) {
+        this.transactionService = transactionService;
     }
 
     @GetMapping("/transactions")
@@ -40,23 +35,8 @@ public class TransactionController {
         
         Sort sort = Sort.by(direction.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC, sortBy);
         Pageable pageable = PageRequest.of(page, PAGE_SIZE, sort);
-        Page<Transaction> transactionPage;
-        
-        if (type != null && !type.isEmpty() || startDate != null && !startDate.isEmpty() || endDate != null && !endDate.isEmpty()) {
-            LocalDateTime start = startDate != null && !startDate.isEmpty() ? 
-                LocalDate.parse(startDate).atStartOfDay() : LocalDate.of(2000, 1, 1).atStartOfDay();
-            LocalDateTime end = endDate != null && !endDate.isEmpty() ? 
-                LocalDate.parse(endDate).atTime(23, 59, 59) : LocalDateTime.now().plusYears(10);
-            
-            if (type != null && !type.isEmpty()) {
-                transactionPage = transactionRepository.findByTransactionTypeAndDateBetween(
-                    TransactionType.valueOf(type), start, end, pageable);
-            } else {
-                transactionPage = transactionRepository.findByDateBetween(start, end, pageable);
-            }
-        } else {
-            transactionPage = transactionRepository.findAll(pageable);
-        }
+        Page<Transaction> transactionPage = transactionService.findTransactions(
+            type, startDate, endDate, pageable);
         
         model.addAttribute("transactions", transactionPage.getContent());
         model.addAttribute("currentPage", page);

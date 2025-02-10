@@ -1,15 +1,19 @@
 package com.halilsahin.stockautomation.service;
 
 import com.halilsahin.stockautomation.entity.Product;
+import com.halilsahin.stockautomation.exception.InsufficientStockException;
+import com.halilsahin.stockautomation.exception.ProductNotFoundException;
 import com.halilsahin.stockautomation.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional
 public class ProductService {
     private final ProductRepository productRepository;
 
@@ -23,7 +27,8 @@ public class ProductService {
     }
 
     public Product findById(Long id) {
-        return productRepository.findById(id).orElseThrow(() -> new RuntimeException("Ürün bulunamadı."));
+        return productRepository.findById(id)
+            .orElseThrow(() -> new ProductNotFoundException("Ürün bulunamadı: " + id));
     }
 
     public void updateProduct(Product updatedProduct) {
@@ -39,7 +44,6 @@ public class ProductService {
     public void deleteById(Long id) {
         productRepository.deleteById(id);
     }
-
 
     public List<Product> findAllByOrderByIdDesc() {
         return productRepository.findAllByOrderByIdDesc();
@@ -92,5 +96,21 @@ public class ProductService {
                     return Double.compare(value2, value1);
                 })
                 .collect(Collectors.toList());
+    }
+
+    public void decreaseStock(Product product, int quantity) {
+        if (product.getStock() < quantity) {
+            throw new InsufficientStockException("Yetersiz stok! Mevcut stok: " + product.getStock());
+        }
+        product.setStock(product.getStock() - quantity);
+        productRepository.save(product);
+    }
+
+    public void save(Product product) {
+        productRepository.save(product);
+    }
+
+    public void delete(Long id) {
+        productRepository.deleteById(id);
     }
 }
