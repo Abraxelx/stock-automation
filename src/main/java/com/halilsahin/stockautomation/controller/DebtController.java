@@ -29,6 +29,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 import jakarta.servlet.http.HttpServletResponse;
 import com.itextpdf.text.DocumentException;
@@ -140,11 +142,22 @@ public class DebtController {
     // Borçları listeleme
     @GetMapping
     public String getAllDebts(Model model) {
-        model.addAttribute(Constants.DEBTS, debtService.getAllDebts());
+        // Önce istatistikleri al
+        Map<String, Object> stats = debtService.getDebtStatistics();
+        if (stats == null) {
+            stats = new HashMap<>();
+            stats.put("totalDebtAmount", 0.0);
+            stats.put("paidDebtAmount", 0.0);
+            stats.put("unpaidDebtAmount", 0.0);
+            stats.put("overdueDebts", new ArrayList<>());
+            stats.put("upcomingDebts", new ArrayList<>());
+        }
+
+        model.addAttribute("debts", debtService.getAllDebts());
         model.addAttribute("customers", customerService.getAllCustomers());
-        model.addAttribute(Constants.PRODUCTS, productService.findAll());
-        model.addAttribute("stats", debtService.getDebtStatistics());
-        return Constants.DEBTS;
+        model.addAttribute("products", productService.findAll());
+        model.addAttribute("stats", stats);
+        return "debts";
     }
 
     // Müşteriye göre borç arama
