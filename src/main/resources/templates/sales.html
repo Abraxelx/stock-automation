@@ -59,23 +59,12 @@
         <label for="barcode" class="form-label">
           <i class="fas fa-barcode"></i> Barkod
         </label>
-        <input type="text" class="form-control" id="barcode" name="barcode" placeholder="Barkod okutun veya girin" required autofocus>
+        <input type="text" class="form-control" id="barcode" name="barcode" placeholder="Barkod okutun veya girin" required autofocus 
+               maxlength="13" oninput="checkBarcode(this.value)">
       </div>
 
-      <!-- Miktar Girişi -->
-      <div class="col-md-4">
-        <label for="quantity" class="form-label">
-          <i class="fas fa-cubes"></i> Miktar
-        </label>
-        <input type="number" class="form-control" id="quantity" name="quantity" placeholder="Miktar" min="1" value="1" required autocomplete="off">
-      </div>
-
-      <!-- Ürün Ekle Butonu -->
-      <div class="col-md-3 align-self-end">
-        <button type="submit" class="btn btn-primary w-100">
-          <i class="fas fa-plus"></i> Ürün Ekle
-        </button>
-      </div>
+      <!-- Gizli miktar input'u -->
+      <input type="hidden" id="quantity" name="quantity" value="1">
     </form>
   </div>
 
@@ -161,9 +150,19 @@
     });
   });
 
+  function checkBarcode(barcode) {
+    if (barcode.length === 13) {
+      // Barkod 13 haneye ulaştığında formu otomatik gönder
+      document.querySelector('form').submit();
+    }
+  }
+
   // Form gönderildikten sonra barkod alanını yeniden odakla
   document.querySelector('form').addEventListener('submit', function () {
-    setTimeout(() => document.getElementById('barcode').focus(), 100);
+    setTimeout(() => {
+      document.getElementById('barcode').value = ''; // Barkod alanını temizle
+      document.getElementById('barcode').focus();
+    }, 100);
   });
 </script>
 </body>
