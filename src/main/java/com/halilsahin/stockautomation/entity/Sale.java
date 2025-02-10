@@ -20,5 +20,11 @@ public class Sale {
 
     @Column(nullable = false)
     private double total;
+
+    @Column
+    private double discountRate = 0;
+
+    @Column
+    private double finalTotal;
 }
 

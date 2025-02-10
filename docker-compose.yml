@@ -20,7 +20,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: abraxel/stock-automation:latest
+      args:
+        VERSION: 1.2.2
+      labels:
+        - "version=1.2.2"
+    image: abraxel/stock-automation:1.2.2
     container_name: spring-app-container
     ports:
       - "8080:8080"

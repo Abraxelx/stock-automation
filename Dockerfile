@@ -1,12 +1,27 @@
-FROM gradle:8.0.2-jdk17 AS builder
+# Build stage
+FROM --platform=$BUILDPLATFORM gradle:8.0.2-jdk17 AS builder
 WORKDIR /app
 COPY . .
-RUN gradle clean build --no-daemon
+RUN gradle bootJar --no-daemon
 
-FROM openjdk:17.0.1-jdk-slim
+# Run stage
+FROM --platform=$TARGETPLATFORM eclipse-temurin:17-jre-jammy
 WORKDIR /app
-COPY --from=builder /app/build/libs/stock-automation-*.jar /app/application.jar
-COPY src/main/resources/templates /app/templates
-COPY src/main/resources/static /app/static
-ENTRYPOINT ["java", "-jar", "application.jar"]
+COPY --from=builder /app/build/libs/stock-automation-*.jar app.jar
+
+# Metadata
+LABEL maintainer="Halil Sahin"
+LABEL version="1.2.2"
+LABEL description="Stock Automation Application"
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s \
+  CMD curl -f http://localhost:8080/ || exit 1
+
+# Container config
 EXPOSE 8080
+ENV TZ=Europe/Istanbul
+ENV JAVA_OPTS="-Xmx512m -Xms256m"
+
+# Run application
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

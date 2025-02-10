@@ -115,13 +115,27 @@
     <div class="total-section">
       <div class="row align-items-center">
         <div class="col-md-6">
+          <div class="mb-3">
+            <div class="input-group">
+              <span class="input-group-text">İskonto (%)</span>
+              <input type="number" class="form-control" id="discountRate" 
+                     min="0" max="100" value="0" step="1"
+                     onchange="calculateDiscount()">
+            </div>
+          </div>
           <h4 class="mb-0">
             <i class="fas fa-calculator"></i> 
-            Toplam: <span class="text-primary" th:text="${total} + ' TL'"></span>
+            Alt Toplam: <span class="text-muted" th:text="${total} + ' TL'"></span>
+            <br>
+            <small class="text-danger" id="discountAmount"></small>
+            <br>
+            Genel Toplam: <span class="text-primary" id="finalTotal" th:text="${total} + ' TL'"></span>
           </h4>
         </div>
         <div class="col-md-6 text-end">
           <form th:action="@{/sales/complete}" method="post" class="d-inline">
+            <input type="hidden" name="discountRate" id="hiddenDiscountRate" value="0">
+            <input type="hidden" name="finalTotal" id="hiddenFinalTotal" th:value="${total}">
             <button type="submit" class="btn btn-success">
               <i class="fas fa-check-circle"></i> Satışı Tamamla
             </button>
@@ -164,6 +178,38 @@
       document.getElementById('barcode').focus();
     }, 100);
   });
+
+  function calculateDiscount() {
+    // Alt toplam değerini th:text ile set edilen orijinal değerden al
+    const subtotal = parseFloat(document.querySelector('.text-muted').textContent);
+    const discountRate = parseFloat(document.getElementById('discountRate').value) || 0;
+    
+    if (discountRate < 0 || discountRate > 100) {
+        alert('İskonto oranı 0-100 arasında olmalıdır!');
+        document.getElementById('discountRate').value = 0;
+        discountRate = 0;
+    }
+    
+    // İskonto 0 ise genel toplamı alt toplama eşitle
+    if (discountRate === 0) {
+        document.getElementById('discountAmount').textContent = '';
+        document.getElementById('finalTotal').textContent = `${subtotal.toFixed(2)} TL`;
+        document.getElementById('hiddenDiscountRate').value = 0;
+        document.getElementById('hiddenFinalTotal').value = subtotal;
+        return;
+    }
+    
+    const discountAmount = (subtotal * discountRate) / 100;
+    const finalTotal = subtotal - discountAmount;
+    
+    document.getElementById('discountAmount').textContent = 
+        `İskonto: -${discountAmount.toFixed(2)} TL (${discountRate}%)`;
+    document.getElementById('finalTotal').textContent = `${finalTotal.toFixed(2)} TL`;
+    
+    // Hidden input'ları güncelle
+    document.getElementById('hiddenDiscountRate').value = discountRate;
+    document.getElementById('hiddenFinalTotal').value = finalTotal;
+  }
 </script>
 </body>
 </html>

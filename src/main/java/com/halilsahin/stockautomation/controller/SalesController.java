@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
@@ -155,11 +156,16 @@ public class SalesController {
 
     // Satışı Tamamlama
     @PostMapping("/complete")
-    public String completeSale() {
-        // Yeni bir satış kaydı oluştur
+    public String completeSale(
+            @RequestParam(defaultValue = "0") double discountRate,
+            @RequestParam double finalTotal,
+            RedirectAttributes redirectAttributes) {
+        
         Sale sale = new Sale();
         sale.setDate(LocalDateTime.now());
         sale.setTotal(total);
+        sale.setDiscountRate(discountRate);
+        sale.setFinalTotal(finalTotal);
         sale = saleRepository.save(sale); // Veritabanına kaydet
 
         // Her bir SaleItem için ilişkiyi kaydet
