@@ -5,6 +5,9 @@ import com.halilsahin.stockautomation.entity.Sale;
 import com.halilsahin.stockautomation.entity.SaleItem;
 import com.halilsahin.stockautomation.enums.TransactionType;
 import com.halilsahin.stockautomation.repository.TransactionRepository;
+import com.halilsahin.stockautomation.transaction.TransactionHandler;
+import com.halilsahin.stockautomation.transaction.TransactionHandlerFactory;
+import com.halilsahin.stockautomation.transaction.TransactionContext;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -19,9 +22,11 @@ import java.util.List;
 public class TransactionService {
 
     private final TransactionRepository transactionRepository;
+    private final TransactionHandlerFactory handlerFactory;
 
-    public TransactionService(TransactionRepository transactionRepository) {
+    public TransactionService(TransactionRepository transactionRepository, TransactionHandlerFactory handlerFactory) {
         this.transactionRepository = transactionRepository;
+        this.handlerFactory = handlerFactory;
     }
 
     public Page<Transaction> findTransactions(String type, String startDate, String endDate, Pageable pageable) {
@@ -68,5 +73,10 @@ public class TransactionService {
         transaction.setDescription(description.toString());
         
         transactionRepository.save(transaction);
+    }
+
+    public void processTransaction(TransactionType type, TransactionContext context) {
+        TransactionHandler handler = handlerFactory.getHandler(type);
+        handler.handleTransaction(context);
     }
 }

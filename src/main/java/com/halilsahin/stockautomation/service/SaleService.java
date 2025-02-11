@@ -3,15 +3,18 @@ package com.halilsahin.stockautomation.service;
 import com.halilsahin.stockautomation.entity.Product;
 import com.halilsahin.stockautomation.entity.Sale;
 import com.halilsahin.stockautomation.entity.SaleItem;
+import com.halilsahin.stockautomation.enums.TransactionType;
 import com.halilsahin.stockautomation.exception.InsufficientStockException;
 import com.halilsahin.stockautomation.exception.ProductNotFoundException;
 import com.halilsahin.stockautomation.repository.SaleItemRepository;
 import com.halilsahin.stockautomation.repository.SaleRepository;
+import com.halilsahin.stockautomation.transaction.TransactionContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @Transactional
@@ -31,7 +34,24 @@ public class SaleService {
         this.transactionService = transactionService;
     }
 
-    public Sale completeSale(List<SaleItem> saleItems, double total, double discountRate, double finalTotal) {
+    public Sale completeSale(List<SaleItem> items, double total, double discountRate, double finalTotal) {
+        Sale sale = createAndSaveSale(items, total, discountRate, finalTotal);
+        
+        TransactionContext context = TransactionContext.builder()
+            .relatedEntity("SALE")
+            .amount(finalTotal)
+            .date(LocalDateTime.now())
+            .additionalData(Map.of(
+                "sale", sale,
+                "items", items
+            ))
+            .build();
+            
+        transactionService.processTransaction(TransactionType.SALE, context);
+        return sale;
+    }
+
+    private Sale createAndSaveSale(List<SaleItem> items, double total, double discountRate, double finalTotal) {
         Sale sale = new Sale();
         sale.setDate(LocalDateTime.now());
         sale.setTotal(total);
@@ -40,15 +60,12 @@ public class SaleService {
         sale = saleRepository.save(sale);
 
         // Önce tüm ürünleri kaydet ve stokları güncelle
-        for (SaleItem saleItem : saleItems) {
+        for (SaleItem saleItem : items) {
             saleItem.setSale(sale);
             saleItemRepository.save(saleItem);
             productService.decreaseStock(saleItem.getProduct(), saleItem.getQuantity());
         }
             
-        // Tek bir transaction kaydı oluştur
-        transactionService.createSaleTransaction(sale, saleItems);
-
         return sale;
     }
 
