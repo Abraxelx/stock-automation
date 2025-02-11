@@ -2,6 +2,7 @@ package com.halilsahin.stockautomation.controller;
 
 import com.halilsahin.stockautomation.constants.Constants;
 import com.halilsahin.stockautomation.entity.Product;
+import com.halilsahin.stockautomation.entity.Sale;
 import com.halilsahin.stockautomation.entity.SaleItem;
 import com.halilsahin.stockautomation.service.SaleService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +24,16 @@ public class SalesController {
     @Autowired
     public SalesController(SaleService saleService) {
         this.saleService = saleService;
+    }
+
+    @GetMapping("/detail/{id}")
+    public String getSaleDetail(@PathVariable Long id, Model model) {
+        Sale sale = saleService.findById(id);
+        if (sale == null) {
+            return "redirect:/transactions";
+        }
+        model.addAttribute("sale", sale);
+        return "sale-detail";
     }
 
     // Satış Sayfasını Görüntüleme

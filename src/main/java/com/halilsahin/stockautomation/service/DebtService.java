@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.math.BigDecimal;
 
 @Service
 public class DebtService {
@@ -45,12 +46,14 @@ public class DebtService {
                 inst.setPaymentDate(debt.getPaymentDate()); // Borcun ödeme tarihini taksitlere de uygula (isteğe bağlı)
             }
         }
-        // Ödeme işlemi için ayrıca bir Transaction oluşturulabilir (işlem burada yapılmamışsa controller üzerinden de yapılabilir)
-        Transaction transaction = new Transaction();
-        transaction.setDate(debt.getPaymentDate());
+        // Ödeme işlemi için ayrıca bir Transaction oluşturulabilir
+        Transaction transaction = Transaction.createDebtTransaction(
+            debt.getDebtor(),
+            BigDecimal.valueOf(-debt.getAmount()),
+            BigDecimal.ZERO,
+            BigDecimal.ZERO
+        );
         transaction.setDescription("Borç ödemesi yapıldı: " + debt.getAmount() + " TL");
-        transaction.setAmount(debt.getAmount());
-        transaction.setTransactionType(TransactionType.DEBT_OUT);
         transactionRepository.save(transaction);
         return debtRepository.save(debt);
     }
@@ -106,15 +109,16 @@ public class DebtService {
         }
        
         // Ödeme işlemi için Transaction kaydı
-        Transaction transaction = new Transaction(
-            LocalDateTime.now(),
-            String.format("Borç Ödemesi - %s: %s TL (%s)", 
-                debt.getDebtor().getFirstName() + " " + debt.getDebtor().getLastName(),
-                debt.getAmount(),
-                paymentMethod.getDisplayName()),
-            debt.getAmount(),
-            TransactionType.DEBT_OUT
+        Transaction transaction = Transaction.createDebtTransaction(
+            debt.getDebtor(),
+            BigDecimal.valueOf(-debt.getAmount()), // negative for payment
+            BigDecimal.ZERO,
+            BigDecimal.ZERO
         );
+        transaction.setDescription(String.format("Borç Ödemesi - %s: %s TL (%s)", 
+            debt.getDebtor().getFirstName() + " " + debt.getDebtor().getLastName(),
+            debt.getAmount(),
+            paymentMethod.getDisplayName()));
         transactionRepository.save(transaction);
        
         debtRepository.save(debt);

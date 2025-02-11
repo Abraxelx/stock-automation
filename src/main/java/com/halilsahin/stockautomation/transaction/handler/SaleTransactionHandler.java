@@ -10,6 +10,7 @@ import com.halilsahin.stockautomation.transaction.TransactionHandler;
 import org.springframework.stereotype.Component;
 import com.halilsahin.stockautomation.transaction.TransactionContext;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Component
@@ -30,12 +31,8 @@ public class SaleTransactionHandler implements TransactionHandler {
         Sale sale = (Sale) context.getAdditionalData().get("sale");
         List<SaleItem> items = (List<SaleItem>) context.getAdditionalData().get("items");
         
-        Transaction transaction = Transaction.builder()
-            .transactionType(TransactionType.SALE)
-            .amount(context.getAmount())
-            .date(context.getDate())
-            .description(buildDescription(sale, items))
-            .build();
+        Transaction transaction = Transaction.createSaleTransaction(sale, BigDecimal.valueOf(context.getAmount()));
+        transaction.setDescription(buildDescription(sale, items));
             
         transactionRepository.save(transaction);
     }

@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -45,15 +46,17 @@ public class DebtController {
     private final DocumentService documentService;
     private final TransactionRepository transactionRepository;
     private final DebtRepository debtRepository;
+    private final TransactionService transactionService;
 
     @Autowired
-    public DebtController(DebtService debtService, ProductService productService, CustomerService customerService, DocumentService documentService, TransactionRepository transactionRepository, DebtRepository debtRepository) {
+    public DebtController(DebtService debtService, ProductService productService, CustomerService customerService, DocumentService documentService, TransactionRepository transactionRepository, DebtRepository debtRepository, TransactionService transactionService) {
         this.debtService = debtService;
         this.productService = productService;
         this.customerService = customerService;
         this.documentService = documentService;
         this.transactionRepository = transactionRepository;
         this.debtRepository = debtRepository;
+        this.transactionService = transactionService;
     }
 
     // Borç Girişi
@@ -123,15 +126,15 @@ public class DebtController {
         }
         debtService.addDebt(debt);
 
-
-
         // Transaction kaydı
-        transactionRepository.save(new Transaction(
-                LocalDateTime.now(),
-                debtor.getFirstName() + " " + debtor.getLastName() + " " + amount + " " + "BORÇ GİRİŞİ YAPTI",
-                debt.getAmount(),
-                TransactionType.DEBT_IN
-        ));
+        Transaction transaction = Transaction.createDebtTransaction(
+            debtor, // actual customer this time
+            BigDecimal.valueOf(debt.getAmount()),
+            BigDecimal.ZERO,
+            BigDecimal.valueOf(debt.getAmount())
+        );
+        transaction.setDescription(debtor.getFirstName() + " " + debtor.getLastName() + " " + amount + " " + "BORÇ GİRİŞİ YAPTI");
+        transactionService.save(transaction);
 
         model.addAttribute(Constants.DEBTS, debtService.getAllDebts());
         model.addAttribute("customers", customerService.getAllCustomers());
@@ -200,12 +203,14 @@ public class DebtController {
             debtService.saveInstallment(installment);
 
             // Transaction kaydı
-            transactionRepository.save(new Transaction(
-                    LocalDateTime.now(),
-                    "Taksit Ödendi: " + installment.getAmount() + " TL",
-                    installment.getAmount(),
-                    TransactionType.DEBT_OUT
-            ));
+            Transaction transaction = Transaction.createDebtTransaction(
+                null, // customer null for now
+                BigDecimal.valueOf(-installment.getAmount()), // negative for DEBT_OUT
+                BigDecimal.ZERO, // previous balance
+                BigDecimal.ZERO  // new balance
+            );
+            transaction.setDescription("Taksit Ödendi: " + installment.getAmount() + " TL");
+            transactionService.save(transaction);
         }
 
         assert installment != null;

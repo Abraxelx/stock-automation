@@ -14,6 +14,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -88,18 +89,16 @@ public class ProductController {
         product.setPrice(price);
         product.setPurchasePrice(purchasePrice);
 
-        Transaction transaction = new Transaction();
-        transaction.setTransactionType(TransactionType.STOCK_IN);
-        transaction.setAmount(product.getPrice() * stock);
-        transaction.setDate(LocalDateTime.now());
-        transaction.setRelatedEntity("Product");
-        if(description != null && !description.isEmpty()) {
-            transaction.setDescription("ÜRÜN ADI: ".concat(name).concat(description));
-        } else {
-            transaction.setDescription("ÜRÜN ADI: ".concat(name).concat("GİRİLEN ÜRÜN ADETİ: " + stock ));
-        }
+        // Önce Product'ı kaydet
+        product = productRepository.save(product);
+
+        // Sonra Transaction'ı oluştur ve kaydet
+        Transaction transaction = Transaction.createStockTransaction(
+            product, 
+            stock, 
+            BigDecimal.valueOf(product.getPrice() * stock)
+        );
         transactionRepository.save(transaction);
-        productRepository.save(product);
 
         redirectAttributes.addFlashAttribute("success", "Ürün başarıyla eklendi!");
         redirectAttributes.addFlashAttribute(Constants.PRODUCTS, productRepository.findAllByOrderByIdDesc());
@@ -176,7 +175,18 @@ public class ProductController {
         return "redirect:/products";
     }
 
-
+    @GetMapping("/detail/{id}")
+    public String getProductDetail(@PathVariable Long id, Model model) {
+        Product product = productService.findById(id);
+        if (product == null) {
+            return "redirect:/transactions";
+        }
+        model.addAttribute("product", product);
+        // Ürüne ait stok hareketlerini getir
+        List<Transaction> transactions = transactionRepository.findByProductOrderByDateDesc(product);
+        model.addAttribute("transactions", transactions);
+        return "product-detail";
+    }
 
 }
 

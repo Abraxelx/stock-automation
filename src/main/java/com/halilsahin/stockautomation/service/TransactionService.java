@@ -13,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -37,7 +38,7 @@ public class TransactionService {
                 LocalDate.parse(endDate).atTime(23, 59, 59) : LocalDateTime.now().plusYears(10);
             
             if (type != null && !type.isEmpty()) {
-                return transactionRepository.findByTransactionTypeAndDateBetween(
+                return transactionRepository.findByTypeAndDateBetween(
                     TransactionType.valueOf(type), start, end, pageable);
             }
             return transactionRepository.findByDateBetween(start, end, pageable);
@@ -46,11 +47,10 @@ public class TransactionService {
     }
 
     public void createSaleTransaction(Sale sale, List<SaleItem> saleItems) {
-        Transaction transaction = new Transaction();
-        transaction.setTransactionType(TransactionType.SALE);
-        transaction.setAmount(sale.getFinalTotal());
-        transaction.setRelatedEntity("SALE");
-        transaction.setDate(LocalDateTime.now());
+        Transaction transaction = Transaction.createSaleTransaction(
+            sale, 
+            BigDecimal.valueOf(sale.getFinalTotal())
+        );
         
         StringBuilder description = new StringBuilder();
         description.append("Satılan Ürünler: ");
@@ -78,5 +78,9 @@ public class TransactionService {
     public void processTransaction(TransactionType type, TransactionContext context) {
         TransactionHandler handler = handlerFactory.getHandler(type);
         handler.handleTransaction(context);
+    }
+
+    public void save(Transaction transaction) {
+        transactionRepository.save(transaction);
     }
 }

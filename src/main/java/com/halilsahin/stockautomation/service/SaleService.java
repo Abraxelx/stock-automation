@@ -126,4 +126,8 @@ public class SaleService {
         item.setQuantity(quantity);
         item.setSubtotal(item.getUnitPrice() * quantity);
     }
-} 
+
+    public Sale findById(Long id) {
+       return saleRepository.findById(id).orElse(null);
+    }
+}

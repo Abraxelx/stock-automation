@@ -48,7 +48,7 @@
             <option value="STOCK_IN">STOK GİRİŞİ</option>
             <option value="STOCK_OUT">STOK ÇIKIŞI</option>
             <option value="DEBT_IN">BORÇ GİRİŞİ</option>
-            <option value="DEBT_OUT">BORÇ ÇIKIŞI</option>
+            <option value="DEBT_OUT">BORÇ ÖDEMESİ</option>
           </select>
         </div>
         <div class="col-md-4">
@@ -73,41 +73,61 @@
     <div class="table-responsive">
       <table class="table table-hover">
         <thead class="table-dark">
-        <tr>
-          <th>#</th>
-          <th>İŞLEM TİPİ</th>
-          <th>AÇIKLAMA</th>
-          <th>TUTAR</th>
-          <th>TARİH</th>
-        </tr>
+          <tr>
+            <th>#</th>
+            <th>İŞLEM TİPİ</th>
+            <th>AÇIKLAMA</th>
+            <th>TUTAR</th>
+            <th>TARİH</th>
+            <th>DETAY</th>
+          </tr>
         </thead>
         <tbody>
-        <tr th:each="transaction, iterStat : ${transactions}">
-          <td th:text="${iterStat.count}"></td>
-          <td>
-            <!-- İşlem tipine göre badge'ler -->
-            <span th:switch="${transaction.transactionType.toString()}">
-              <span th:case="SALE" class="badge badge-custom bg-danger">
-                <i class="fas fa-shopping-cart"></i> SATIŞ
+          <tr th:each="transaction, iterStat : ${transactions}">
+            <td th:text="${iterStat.count}"></td>
+            <td>
+              <!-- İşlem tipine göre badge'ler -->
+              <span th:switch="${transaction.type.toString()}">
+                <span th:case="SALE" class="badge badge-custom bg-danger">
+                  <i class="fas fa-shopping-cart"></i> SATIŞ
+                </span>
+                <span th:case="STOCK_IN" class="badge badge-custom bg-success">
+                  <i class="fas fa-plus-circle"></i> STOK GİRİŞİ
+                </span>
+                <span th:case="STOCK_OUT" class="badge badge-custom bg-warning">
+                  <i class="fas fa-minus-circle"></i> STOK ÇIKIŞI
+                </span>
+                <span th:case="DEBT_IN" class="badge badge-custom bg-primary">
+                  <i class="fas fa-hand-holding-usd"></i> BORÇ GİRİŞİ
+                </span>
+                <span th:case="DEBT_OUT" class="badge badge-custom bg-info">
+                  <i class="fas fa-money-bill-wave"></i> BORÇ ÖDEMESİ
+                </span>
               </span>
-              <span th:case="STOCK_IN" class="badge badge-custom bg-success">
-                <i class="fas fa-plus-circle"></i> STOK GİRİŞİ
+            </td>
+            <td th:text="${transaction.description}"></td>
+            <td th:text="${#numbers.formatDecimal(transaction.amount, 0, 'COMMA', 2, 'POINT')} + ' TL'"></td>
+            <td th:text="${#temporals.format(transaction.date, 'dd MMMM yyyy EEEE - HH:mm ')}"></td>
+            <td>
+              <span th:switch="${transaction.type.toString()}">
+                <a th:case="SALE" class="btn btn-sm btn-outline-info" 
+                   th:if="${transaction.sale != null}"
+                   th:href="@{/sales/detail/{id}(id=${transaction.sale.id})}">
+                  <i class="fas fa-eye"></i> Satış Detayı
+                </a>
+                <a th:case="STOCK_IN" class="btn btn-sm btn-outline-success"
+                   th:if="${transaction.product != null}"
+                   th:href="@{/products/detail/{id}(id=${transaction.product.id})}">
+                  <i class="fas fa-box"></i> Ürün Detayı
+                </a>
+                <a th:case="DEBT_IN" class="btn btn-sm btn-outline-primary"
+                   th:if="${transaction.customer != null}"
+                   th:href="@{/customers/detail/{id}(id=${transaction.customer.id})}">
+                  <i class="fas fa-user"></i> Müşteri Detayı
+                </a>
               </span>
-              <span th:case="STOCK_OUT" class="badge badge-custom bg-warning">
-                <i class="fas fa-minus-circle"></i> STOK ÇIKIŞI
-              </span>
-              <span th:case="DEBT_IN" class="badge badge-custom bg-primary">
-                <i class="fas fa-hand-holding-usd"></i> BORÇ GİRİŞİ
-              </span>
-              <span th:case="DEBT_OUT" class="badge badge-custom bg-info">
-                <i class="fas fa-money-bill-wave"></i> BORÇ ÇIKIŞI
-              </span>
-            </span>
-          </td>
-          <td th:text="${transaction.description}"></td>
-          <td th:text="${#numbers.formatDecimal(transaction.amount, 0, 'COMMA', 2, 'POINT')} + ' TL'"></td>
-          <td th:text="${#temporals.format(transaction.date, 'dd MMMM yyyy EEEE - HH:mm ')}"></td>
-        </tr>
+            </td>
+          </tr>
         </tbody>
       </table>
 
