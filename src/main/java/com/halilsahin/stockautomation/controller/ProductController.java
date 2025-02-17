@@ -129,18 +129,32 @@ public class ProductController {
     }
 
     @GetMapping("/search")
-    public String searchProducts(@RequestParam(value = "keyword", required = false, defaultValue = "") String keyword, Model model) {
-        List<Product> products;
-
+    public String searchProducts(
+            @RequestParam(value = "keyword", required = false, defaultValue = "") String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "desc") String direction,
+            Model model) {
+        
+        Sort sort = Sort.by(direction.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC, sortBy);
+        Pageable pageable = PageRequest.of(page, PAGE_SIZE, sort);
+        
+        Page<Product> productPage;
         if (keyword.isEmpty()) {
-            products = productService.findAllByOrderByIdDesc();
+            productPage = productService.findAllPaged(pageable);
         } else {
-            products = productService.searchByNameOrBarcode(keyword);
+            productPage = productRepository.searchProducts(keyword, pageable);
         }
-
-        model.addAttribute(Constants.PRODUCTS, products);
+        
+        model.addAttribute("products", productPage.getContent());
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", productPage.getTotalPages());
+        model.addAttribute("totalItems", productPage.getTotalElements());
         model.addAttribute("keyword", keyword);
-        return Constants.PRODUCTS;
+        model.addAttribute("sortBy", sortBy);
+        model.addAttribute("direction", direction);
+        
+        return "products";
     }
 
     @GetMapping("/edit/{id}")
