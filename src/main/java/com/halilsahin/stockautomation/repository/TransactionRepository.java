@@ -1,5 +1,6 @@
 package com.halilsahin.stockautomation.repository;
 
+import com.halilsahin.stockautomation.entity.Customer;
 import com.halilsahin.stockautomation.entity.Product;
 import com.halilsahin.stockautomation.entity.Transaction;
 import com.halilsahin.stockautomation.enums.TransactionType;
@@ -19,4 +20,5 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             TransactionType type, LocalDateTime startDate, LocalDateTime endDate, Pageable pageable);
     Page<Transaction> findByDateBetween(LocalDateTime startDate, LocalDateTime endDate, Pageable pageable);
     List<Transaction> findByProductOrderByDateDesc(Product product);
+    List<Transaction> findByCustomerOrderByDateDesc(Customer customer);
 }

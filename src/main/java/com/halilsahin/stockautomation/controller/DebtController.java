@@ -2,9 +2,9 @@ package com.halilsahin.stockautomation.controller;
 
 import com.halilsahin.stockautomation.constants.Constants;
 import com.halilsahin.stockautomation.entity.*;
+import com.halilsahin.stockautomation.enums.DebtDirection;
 import com.halilsahin.stockautomation.enums.DebtType;
 import com.halilsahin.stockautomation.enums.PaymentMethod;
-import com.halilsahin.stockautomation.enums.TransactionType;
 import com.halilsahin.stockautomation.repository.DebtRepository;
 import com.halilsahin.stockautomation.repository.TransactionRepository;
 import com.halilsahin.stockautomation.service.*;
@@ -61,52 +61,52 @@ public class DebtController {
 
     // Borç Girişi
     @PostMapping("/add")
-    public String addDebt(@RequestParam Long debtorId,
-                          @RequestParam Long creditorId,
-                          @RequestParam double amount,
-                          @RequestParam (required = false) Long productId,
-                          @RequestParam String dueDate,
-                          @RequestParam DebtType debtType,
-                          @RequestParam(required = false) MultipartFile documentFile,
-                          @RequestParam(required = false) Integer installments,
-                          Model model) {
-        Customer debtor = customerService.findCustomerById(debtorId);
-        Customer creditor = customerService.findCustomerById(creditorId);
-        if (debtor == null || creditor == null) {
-            model.addAttribute("error", "Borçlu veya alacaklı müşteri bulunamadı.");
+    public String addDebt(@RequestParam Long customerId,
+                         @RequestParam double amount,
+                         @RequestParam String dueDate,
+                         @RequestParam DebtType debtType,
+                         @RequestParam DebtDirection direction,
+                         @RequestParam(required = false) Long productId,
+                         @RequestParam(required = false) MultipartFile documentFile,
+                         @RequestParam(required = false) Integer installments,
+                         Model model) {
+        
+        Customer customer = customerService.findCustomerById(customerId);
+        if (customer == null) {
+            model.addAttribute("error", "Müşteri bulunamadı");
             return Constants.DEBTS;
         }
+
         Product product = (productId != null) ? productService.findById(productId) : null;
 
-
         Debt debt = new Debt();
+        debt.setCustomer(customer);
         debt.setAmount(amount);
         debt.setDueDate(LocalDateTime.parse(dueDate));
-        debt.setDebtType(debtType);  // Borç türünü ayarla
-        debt.setDebtor(debtor);
-        debt.setCreditor(creditor);
+        debt.setDebtType(debtType);
+        debt.setDirection(direction);
         debt.setProduct(product);
         debt.setPaid(false);
+        debt.setCreatedAt(LocalDateTime.now());
 
-        // Taksit oluşturma: Eğer taksit sayısı girildiyse (1'den büyük), borcu eşit parçalara bölüyoruz.
+        // Taksit işlemleri
         if (installments != null && installments > 1) {
             List<Installment> installmentList = new ArrayList<>();
             double installmentAmount = amount / installments;
             LocalDateTime installmentDueDate = debt.getDueDate();
+            
             for (int i = 0; i < installments; i++) {
                 Installment inst = new Installment();
                 inst.setAmount(installmentAmount);
-                // Her taksiti, başlangıç vadesine i ay ekleyerek ayarlıyoruz (örneğin aylık taksitler)
                 inst.setDueDate(installmentDueDate.plusMonths(i));
                 inst.setPaid(false);
                 inst.setDebt(debt);
-                inst.setDueDate(installmentDueDate.plusMonths(installments - 1));
                 installmentList.add(inst);
             }
             debt.setInstallments(installmentList);
         }
 
-        // Belge ekleme
+        // Belge işlemleri
         if (documentFile != null && !documentFile.isEmpty()) {
             try {
                 Document document = new Document();
@@ -119,27 +119,14 @@ public class DebtController {
                 document.setDebt(debt);
                 debt.getDocuments().add(document);
             } catch (IOException e) {
-                e.printStackTrace();
                 model.addAttribute("error", "Belge kaydedilemedi: " + e.getMessage());
                 return Constants.DEBTS;
             }
         }
+
         debtService.addDebt(debt);
 
-        // Transaction kaydı
-        Transaction transaction = Transaction.createDebtTransaction(
-            debtor, // actual customer this time
-            BigDecimal.valueOf(debt.getAmount()),
-            BigDecimal.ZERO,
-            BigDecimal.valueOf(debt.getAmount())
-        );
-        transaction.setDescription(debtor.getFirstName() + " " + debtor.getLastName() + " " + amount + " " + "BORÇ GİRİŞİ YAPTI");
-        transactionService.save(transaction);
-
-        model.addAttribute(Constants.DEBTS, debtService.getAllDebts());
-        model.addAttribute("customers", customerService.getAllCustomers());
-        model.addAttribute(Constants.PRODUCTS, productService.findAll());// Ürünleri de model'e ekleyelim
-        return Constants.DEBTS;
+        return "redirect:/debts";
     }
 
     // Borçları listeleme
@@ -173,25 +160,20 @@ public class DebtController {
 
     // Ödeme işlemi
     @PostMapping("/pay/{id}")
-    public String payDebt(@PathVariable Long id, @RequestParam PaymentMethod paymentMethod) {
-        debtService.payDebt(id, paymentMethod);
+    public String payDebt(@PathVariable Long id, 
+                     @RequestParam PaymentMethod paymentMethod,
+                     @RequestParam BigDecimal amount) {
+        debtService.payDebt(id, paymentMethod, amount);
         return "redirect:/debts";
     }
 
     // ÖDEME EKRANI: payment.html (Ödeme yapmak için ayrı ekran)
     @GetMapping("/payment/{id}")
-    public String paymentScreen(@PathVariable Long id, Model model) {
+    public String showPaymentForm(@PathVariable Long id, Model model) {
         Debt debt = debtService.findDebtById(id);
-        if (debt == null) {
-            model.addAttribute("error", "Borç bulunamadı.");
-            return Constants.DEBTS;
-        }
-        model.addAttribute("debt", debt); // Borç bilgilerini gönder
-        // Borç taksitli mi kontrol et
-        if (debt.getInstallments() != null && !debt.getInstallments().isEmpty()) {
-            model.addAttribute("installments", debt.getInstallments()); // Taksitleri gönder
-        }
-        return "payments"; // Ödeme sayfasına yönlendir
+        model.addAttribute("debt", debt);
+        model.addAttribute("paymentMethods", PaymentMethod.values());
+        return "payments";
     }
 
     // Taksit ödeme işlemi
@@ -317,8 +299,8 @@ public class DebtController {
 
     @PostMapping("/edit/{id}")
     public String updateDebt(@PathVariable Long id,
-                            @RequestParam Long debtorId,
-                            @RequestParam Long creditorId,
+                            @RequestParam Long customerId,
+                            @RequestParam DebtDirection direction,
                             @RequestParam double amount,
                             @RequestParam(required = false) Long productId,
                             @RequestParam String dueDate,
@@ -331,8 +313,8 @@ public class DebtController {
         }
 
         // Temel bilgileri güncelle
-        debt.setDebtor(customerService.findCustomerById(debtorId));
-        debt.setCreditor(customerService.findCustomerById(creditorId));
+        debt.setCustomer(customerService.findCustomerById(customerId));
+        debt.setDirection(direction);
         debt.setAmount(amount);
         debt.setProduct(productId != null ? productService.findById(productId) : null);
         debt.setDueDate(LocalDateTime.parse(dueDate));
@@ -398,6 +380,18 @@ public class DebtController {
         List<Debt> debts = debtService.getAllDebts();
         DebtExcelExporter exporter = new DebtExcelExporter(debts);
         exporter.export(response);
+    }
+
+    // Borç detay sayfası
+    @GetMapping("/detail/{id}")
+    public String getDebtDetail(@PathVariable Long id, Model model) {
+        Debt debt = debtService.findDebtById(id);
+        if (debt == null) {
+            return "redirect:/transactions";
+        }
+        
+        model.addAttribute("debt", debt);
+        return "debt-detail"; // debt-detail.html oluşturmamız gerekecek
     }
 
 }

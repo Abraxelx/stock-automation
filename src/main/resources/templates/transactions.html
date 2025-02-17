@@ -33,7 +33,7 @@
     <h2 class="mb-4">
       <i class="fas fa-history"></i> İşlem Kaydı
     </h2>
-    
+
     <!-- Filtreleme Bölümü -->
     <div class="filter-section mb-4">
       <form th:action="@{/transactions}" method="get" class="row g-3">
@@ -47,8 +47,11 @@
             <option value="SALE">SATIŞ</option>
             <option value="STOCK_IN">STOK GİRİŞİ</option>
             <option value="STOCK_OUT">STOK ÇIKIŞI</option>
-            <option value="DEBT_IN">BORÇ GİRİŞİ</option>
-            <option value="DEBT_OUT">BORÇ ÖDEMESİ</option>
+            <option value="DEBT_IN">BORÇ ALMA</option>
+            <option value="DEBT_OUT">BORÇ VERME</option>
+            <option value="DEBT_PAYMENT">BORÇ ÖDEMESİ</option>
+            <option value="DEBT_COLLECTION">ALACAK TAHSİLATI</option>
+            <option value="CUSTOMER_ADD">MÜŞTERİ KAYDI</option>
           </select>
         </div>
         <div class="col-md-4">
@@ -97,16 +100,28 @@
                 <span th:case="STOCK_OUT" class="badge badge-custom bg-warning">
                   <i class="fas fa-minus-circle"></i> STOK ÇIKIŞI
                 </span>
-                <span th:case="DEBT_IN" class="badge badge-custom bg-primary">
-                  <i class="fas fa-hand-holding-usd"></i> BORÇ GİRİŞİ
+                <span th:case="DEBT_IN" class="badge badge-custom bg-danger">
+                  <i class="fas fa-arrow-down"></i> BORÇ ALMA
                 </span>
-                <span th:case="DEBT_OUT" class="badge badge-custom bg-info">
+                <span th:case="DEBT_OUT" class="badge badge-custom bg-success">
+                  <i class="fas fa-arrow-up"></i> BORÇ VERME
+                </span>
+                <span th:case="DEBT_PAYMENT" class="badge badge-custom bg-danger">
                   <i class="fas fa-money-bill-wave"></i> BORÇ ÖDEMESİ
+                </span>
+                <span th:case="DEBT_COLLECTION" class="badge badge-custom bg-success">
+                  <i class="fas fa-hand-holding-usd"></i> ALACAK TAHSİLATI
+                </span>
+                <span th:case="CUSTOMER_ADD" class="badge badge-custom bg-info">
+                  <i class="fas fa-user-plus"></i> MÜŞTERİ KAYDI
                 </span>
               </span>
             </td>
             <td th:text="${transaction.description}"></td>
-            <td th:text="${#numbers.formatDecimal(transaction.amount, 0, 'COMMA', 2, 'POINT')} + ' TL'"></td>
+            <td>
+              <i class="fas fa-lira-sign"></i>
+              <span th:text="${#numbers.formatDecimal(transaction.amount, 0, 'COMMA', 2, 'POINT')} + ' TL'"></span>
+            </td>
             <td th:text="${#temporals.format(transaction.date, 'dd MMMM yyyy EEEE - HH:mm ')}"></td>
             <td>
               <span th:switch="${transaction.type.toString()}">
@@ -116,14 +131,21 @@
                   <i class="fas fa-eye"></i> Satış Detayı
                 </a>
                 <a th:case="STOCK_IN" class="btn btn-sm btn-outline-success"
-                   th:if="${transaction.product != null}"
-                   th:href="@{/products/detail/{id}(id=${transaction.product.id})}">
-                  <i class="fas fa-box"></i> Ürün Detayı
+                   th:href="@{/transactions/detail/{id}(id=${transaction.id})}">
+                  <i class="fas fa-box"></i> Stok Detayı
                 </a>
-                <a th:case="DEBT_IN" class="btn btn-sm btn-outline-primary"
-                   th:if="${transaction.customer != null}"
-                   th:href="@{/customers/detail/{id}(id=${transaction.customer.id})}">
-                  <i class="fas fa-user"></i> Müşteri Detayı
+                <a th:case="STOCK_OUT" class="btn btn-sm btn-outline-warning"
+                   th:href="@{/transactions/detail/{id}(id=${transaction.id})}">
+                  <i class="fas fa-box"></i> Stok Detayı
+                </a>
+                <a th:if="${transaction.debt != null && 
+                          (transaction.type == T(com.halilsahin.stockautomation.enums.TransactionType).DEBT_IN || 
+                           transaction.type == T(com.halilsahin.stockautomation.enums.TransactionType).DEBT_OUT ||
+                           transaction.type == T(com.halilsahin.stockautomation.enums.TransactionType).DEBT_PAYMENT ||
+                           transaction.type == T(com.halilsahin.stockautomation.enums.TransactionType).DEBT_COLLECTION)}"
+                   class="btn btn-sm btn-outline-primary"
+                   th:href="@{/debts/detail/{id}(id=${transaction.debt.id})}">
+                  <i class="fas fa-file-invoice-dollar"></i> Borç Detayı
                 </a>
               </span>
             </td>
@@ -137,7 +159,7 @@
           Toplam <span th:text="${totalItems}"></span> işlem,
           Sayfa <span th:text="${currentPage + 1}"></span> / <span th:text="${totalPages}"></span>
         </div>
-        
+
         <nav th:if="${totalPages > 1}">
           <ul class="pagination mb-0">
             <!-- İlk Sayfa -->
@@ -146,28 +168,28 @@
                 <i class="fas fa-angle-double-left"></i>
               </a>
             </li>
-            
+
             <!-- Önceki Sayfa -->
             <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
               <a class="page-link" th:href="@{/transactions(page=${currentPage - 1},sortBy=${sortBy},direction=${direction})}">
                 <i class="fas fa-angle-left"></i>
               </a>
             </li>
-            
+
             <!-- Sayfa Numaraları -->
             <li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
                 th:classappend="${currentPage == i} ? 'active'">
               <a class="page-link" th:href="@{/transactions(page=${i},sortBy=${sortBy},direction=${direction})}"
                  th:text="${i + 1}"></a>
             </li>
-            
+
             <!-- Sonraki Sayfa -->
             <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
               <a class="page-link" th:href="@{/transactions(page=${currentPage + 1},sortBy=${sortBy},direction=${direction})}">
                 <i class="fas fa-angle-right"></i>
               </a>
             </li>
-            
+
             <!-- Son Sayfa -->
             <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
               <a class="page-link" th:href="@{/transactions(page=${totalPages - 1},sortBy=${sortBy},direction=${direction})}">

@@ -4,17 +4,27 @@ import lombok.Getter;
 
 @Getter
 public enum TransactionType {
-        SALE("SATIŞ"),
-        STOCK_IN("STOK GİRİŞİ"),
-        STOCK_OUT("STOK ÇIKIŞI"),
-        DEBT_IN("BORÇ GİRİŞİ"),
-        DEBT_OUT("BORÇ ÇIKIŞI"),
-        DEBT_RE_PAYMENT("BORÇ ÖDEME");
+    // Borç işlemleri
+    DEBT_IN("Borç Alma"),
+    DEBT_OUT("Borç Verme"),
+    DEBT_COLLECTION("Alacak Tahsilatı"),
+    DEBT_PAYMENT("Borç Ödemesi"),
+    
+    // Stok işlemleri
+    STOCK_IN("Stok Girişi"),
+    STOCK_OUT("Stok Çıkışı"),
+    
+    // Satış/Alış işlemleri
+    SALE("Satış"),
+    PURCHASE("Alış"),
+    
+    // Müşteri işlemleri
+    CUSTOMER_ADD("Müşteri Kaydı"),
+    CUSTOMER_UPDATE("Müşteri Güncelleme");
 
-        private final String description;
+    private final String displayName;
 
-        TransactionType(String description) {
-            this.description = description;
-        }
-
+    TransactionType(String displayName) {
+        this.displayName = displayName;
+    }
 }

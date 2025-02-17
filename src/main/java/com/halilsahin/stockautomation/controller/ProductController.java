@@ -86,8 +86,8 @@ public class ProductController {
         product.setBarcode(barcode);
         product.setStock(stock);
         product.setUnitType(unitType);
-        product.setPrice(price);
-        product.setPurchasePrice(purchasePrice);
+        product.setPrice(BigDecimal.valueOf(price));
+        product.setPurchasePrice(BigDecimal.valueOf(purchasePrice));
 
         // Önce Product'ı kaydet
         product = productRepository.save(product);
@@ -96,8 +96,9 @@ public class ProductController {
         Transaction transaction = Transaction.createStockTransaction(
             product, 
             stock, 
-            BigDecimal.valueOf(product.getPrice() * stock)
+            BigDecimal.valueOf(product.getPrice().doubleValue() * stock)
         );
+        transaction.setDescription(product.getName() + " ürününe " + stock + " adet stok girişi yapıldı");
         transactionRepository.save(transaction);
 
         redirectAttributes.addFlashAttribute("success", "Ürün başarıyla eklendi!");
@@ -186,6 +187,24 @@ public class ProductController {
         List<Transaction> transactions = transactionRepository.findByProductOrderByDateDesc(product);
         model.addAttribute("transactions", transactions);
         return "product-detail";
+    }
+
+    @PostMapping("/stock/add")
+    public String addStock(@RequestParam Long productId, @RequestParam int quantity) {
+        Product product = productService.findById(productId);
+        if (product != null) {
+            product.setStock(product.getStock() + quantity);
+            productService.save(product);
+            
+            Transaction transaction = Transaction.createStockTransaction(
+                product, 
+                quantity, 
+                product.getPrice().multiply(BigDecimal.valueOf(quantity))
+            );
+            transaction.setDescription(product.getName() + " ürününe " + quantity + " adet stok girişi yapıldı");
+            transactionRepository.save(transaction);
+        }
+        return "redirect:/products";
     }
 
 }

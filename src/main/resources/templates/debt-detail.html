@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Borç Detayı</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .detail-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status-badge {
+            font-size: 1.1em;
+            padding: 8px 16px;
+        }
+        .document-link {
+            text-decoration: none;
+            color: inherit;
+        }
+        .document-link:hover {
+            color: #0056b3;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div th:insert="~{fragments/navbar.html :: navbar}"></div>
+
+    <div class="container mt-4">
+        <div class="card">
+            <div class="card-header">
+                <h4>
+                    <i class="fas fa-file-invoice-dollar"></i> Borç Detayı
+                </h4>
+            </div>
+            <div class="card-body">
+                <table class="table">
+                    <tr>
+                        <th>Borç No:</th>
+                        <td th:text="${debt.id}"></td>
+                    </tr>
+                    <tr>
+                        <th>Müşteri:</th>
+                        <td th:text="${debt.customer.firstName + ' ' + debt.customer.lastName}"></td>
+                    </tr>
+                    <tr>
+                        <th>Borç Tipi:</th>
+                        <td>
+                            <span th:text="${debt.debtType.displayName}"></span>
+                            <span th:if="${debt.direction == T(com.halilsahin.stockautomation.enums.DebtDirection).PAYABLE}" 
+                                  class="badge bg-danger">Borç</span>
+                            <span th:if="${debt.direction == T(com.halilsahin.stockautomation.enums.DebtDirection).RECEIVABLE}" 
+                                  class="badge bg-success">Alacak</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Tutar:</th>
+                        <td th:text="${#numbers.formatDecimal(debt.amount, 0, 'COMMA', 2, 'POINT')} + ' TL'"></td>
+                    </tr>
+                    <tr>
+                        <th>Vade Tarihi:</th>
+                        <td th:text="${#temporals.format(debt.dueDate, 'dd MMMM yyyy EEEE - HH:mm')}"></td>
+                    </tr>
+                    <tr>
+                        <th>Ödeme Durumu:</th>
+                        <td>
+                            <span th:if="${debt.paid}" class="badge bg-success">Ödendi</span>
+                            <span th:unless="${debt.paid}" class="badge bg-warning">Ödenmedi</span>
+                        </td>
+                    </tr>
+                    <tr th:if="${debt.paymentDate != null}">
+                        <th>Ödeme Tarihi:</th>
+                        <td th:text="${#temporals.format(debt.paymentDate, 'dd MMMM yyyy EEEE - HH:mm')}"></td>
+                    </tr>
+                    <tr th:if="${debt.product != null}">
+                        <th>İlgili Ürün:</th>
+                        <td>
+                            <a th:href="@{/products/detail/{id}(id=${debt.product.id})}" 
+                               th:text="${debt.product.name}"></a>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- Taksitler varsa göster -->
+                <div th:if="${!#lists.isEmpty(debt.installments)}" class="mt-4">
+                    <h5>Taksitler</h5>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Taksit No</th>
+                                <th>Tutar</th>
+                                <th>Vade Tarihi</th>
+                                <th>Durum</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="installment, stat : ${debt.installments}">
+                                <td th:text="${stat.count}"></td>
+                                <td th:text="${#numbers.formatDecimal(installment.amount, 0, 'COMMA', 2, 'POINT')} + ' TL'"></td>
+                                <td th:text="${#temporals.format(installment.dueDate, 'dd MMMM yyyy')}"></td>
+                                <td>
+                                    <span th:if="${installment.paid}" class="badge bg-success">Ödendi</span>
+                                    <span th:unless="${installment.paid}" class="badge bg-warning">Ödenmedi</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Belgeler varsa göster -->
+                <div th:if="${!#lists.isEmpty(debt.documents)}" class="mt-4">
+                    <h5>İlgili Belgeler</h5>
+                    <div class="list-group">
+                        <a th:each="doc : ${debt.documents}" 
+                           th:href="@{/debts/document/{id}(id=${doc.id})}"
+                           class="list-group-item list-group-item-action">
+                            <i class="fas fa-file"></i>
+                            <span th:text="${doc.fileName}"></span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

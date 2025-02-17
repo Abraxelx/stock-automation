@@ -64,8 +64,8 @@ public class DebtExcelExporter {
             int columnCount = 0;
 
             createCell(row, columnCount++, debt.getId(), style);
-            createCell(row, columnCount++, debt.getDebtor().getFirstName() + " " + debt.getDebtor().getLastName(), style);
-            createCell(row, columnCount++, debt.getCreditor().getFirstName() + " " + debt.getCreditor().getLastName(), style);
+            createCell(row, columnCount++, debt.getCustomer().getFirstName() + " " + debt.getCustomer().getLastName(), style);
+            createCell(row, columnCount++, debt.getDirection().getDisplayName(), style);
             createCell(row, columnCount++, String.format("%.2f TL", debt.getAmount()), style);
             createCell(row, columnCount++, debt.getDueDate().format(DATE_FORMATTER), style);
             createCell(row, columnCount++, debt.isPaid() ? "Ödendi" : "Ödenmedi", style);

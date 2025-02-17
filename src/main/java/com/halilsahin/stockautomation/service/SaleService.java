@@ -12,6 +12,7 @@ import com.halilsahin.stockautomation.transaction.TransactionContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -93,7 +94,7 @@ public class SaleService {
             
             // Mevcut ürünün miktarını güncelle
             existingItem.setQuantity(totalQuantity);
-            existingItem.setSubtotal(product.getPrice() * totalQuantity);
+            existingItem.setSubtotal(product.getPrice().multiply(BigDecimal.valueOf(totalQuantity)));
             return existingItem;
         }
 
@@ -106,7 +107,7 @@ public class SaleService {
         saleItem.setProduct(product);
         saleItem.setQuantity(quantity);
         saleItem.setUnitPrice(product.getPrice());
-        saleItem.setSubtotal(product.getPrice() * quantity);
+        saleItem.setSubtotal(product.getPrice().multiply(BigDecimal.valueOf(quantity)));
 
         return saleItem;
     }
@@ -124,7 +125,7 @@ public class SaleService {
         }
 
         item.setQuantity(quantity);
-        item.setSubtotal(item.getUnitPrice() * quantity);
+        item.setSubtotal(item.getUnitPrice().multiply(BigDecimal.valueOf(quantity)));
     }
 
     public Sale findById(Long id) {

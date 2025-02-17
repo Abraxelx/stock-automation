@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Component
-public class SaleTransactionHandler implements TransactionHandler {
+public class SaleTransactionHandler implements TransactionHandler<List<SaleItem>> {
     private final TransactionRepository transactionRepository;
 
     public SaleTransactionHandler(TransactionRepository transactionRepository) {
@@ -27,9 +27,9 @@ public class SaleTransactionHandler implements TransactionHandler {
     }
 
     @Override
-    public void handleTransaction(TransactionContext context) {
-        Sale sale = (Sale) context.getAdditionalData().get("sale");
-        List<SaleItem> items = (List<SaleItem>) context.getAdditionalData().get("items");
+    public void handleTransaction(TransactionContext<List<SaleItem>> context) {
+        Sale sale = (Sale) context.getData("sale");
+        List<SaleItem> items = context.getData("items");
         
         Transaction transaction = Transaction.createSaleTransaction(sale, BigDecimal.valueOf(context.getAmount()));
         transaction.setDescription(buildDescription(sale, items));

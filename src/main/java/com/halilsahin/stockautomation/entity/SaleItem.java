@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import java.math.BigDecimal;
 
 @Data
 @Entity
@@ -26,14 +27,14 @@ public class SaleItem {
     @Column(nullable = false)
     private int quantity;
 
-    @Column(nullable = false)
-    private double unitPrice;
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal unitPrice;
 
-    @Column(nullable = false)
-    private double subtotal; // Ara toplam (quantity * unitPrice)
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal subtotal;
 
-    public double getTotal() {
-        return quantity * unitPrice;
+    public BigDecimal getTotal() {
+        return unitPrice.multiply(BigDecimal.valueOf(quantity));
     }
 }
 

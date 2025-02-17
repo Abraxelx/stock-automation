@@ -83,4 +83,9 @@ public class TransactionService {
     public void save(Transaction transaction) {
         transactionRepository.save(transaction);
     }
+
+    public Transaction findById(Long id) {
+        return transactionRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("İşlem bulunamadı: " + id));
+    }
 }

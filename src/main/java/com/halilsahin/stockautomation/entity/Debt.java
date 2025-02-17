@@ -2,6 +2,7 @@ package com.halilsahin.stockautomation.entity;
 
 import com.halilsahin.stockautomation.enums.DebtType;
 import com.halilsahin.stockautomation.enums.PaymentMethod;
+import com.halilsahin.stockautomation.enums.DebtDirection;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.proxy.HibernateProxy;
@@ -22,8 +23,16 @@ public class Debt {
     private Long id;
     private double amount;        // Borç miktarı
     private LocalDateTime dueDate; // Vadesi
-    private LocalDateTime paymentDate; // Ödeme tarihi, eğer ödeme yapılmışsa
-    private boolean isPaid;      // Ödeme durumu (ödenmiş/ödenmemiş)
+    @Column(name = "payment_date")
+    private LocalDateTime paymentDate; // Ödeme tarihi
+    private boolean isPaid;      // Ödeme durumu
+
+    @Column(name = "last_payment_date")
+    private LocalDateTime lastPaymentDate;
+
+    private String description;   // Borç açıklaması
+    private LocalDateTime createdAt; // Oluşturulma tarihi
+    private String createdBy;     // Oluşturan kullanıcı
 
     @Enumerated(EnumType.STRING)
     private PaymentMethod paymentMethod;  // Ödeme yöntemi
@@ -31,17 +40,16 @@ public class Debt {
     @Enumerated(EnumType.STRING)
     private DebtType debtType;  // Borç türü (MAL, ÇEK, SENET, PARA)
 
-    @ManyToOne
-    @JoinColumn(name = "debtor_id")
-    private Customer debtor; //Borç alan
+    @Enumerated(EnumType.STRING)
+    private DebtDirection direction; // Borç yönü (PAYABLE/RECEIVABLE)
 
     @ManyToOne
-    @JoinColumn(name = "creditor_id")    // Borç veren kişi
-    private Customer creditor;
+    @JoinColumn(name = "customer_id")
+    private Customer customer;    // İşlem yapılan müşteri
 
     @ManyToOne
     @JoinColumn(name = "product_id", nullable = true)
-    private Product product;  // Ürün bilgisi
+    private Product product;  // Ürün bilgisi (varsa)
 
     @OneToMany(mappedBy = "debt", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Document> documents = new ArrayList<>();
@@ -49,6 +57,8 @@ public class Debt {
     @OneToMany(mappedBy = "debt", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Installment> installments;
 
+    @OneToOne(mappedBy = "debt", fetch = FetchType.LAZY)
+    private Transaction transaction;
 
     @Override
     public final boolean equals(Object o) {

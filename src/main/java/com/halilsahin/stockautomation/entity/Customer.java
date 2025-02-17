@@ -6,6 +6,13 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import lombok.*;
 import org.hibernate.proxy.HibernateProxy;
+import jakarta.persistence.Column;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.OneToMany;
+import java.util.List;
+import java.util.ArrayList;
 
 import java.util.Objects;
 
@@ -25,6 +32,40 @@ public class Customer {
     private String email;
     private String address;
     private String notes; // Müşteri hakkında notlar
+
+    @Column(nullable = false)
+    private LocalDateTime registrationDate;
+    
+    @Column(nullable = false)
+    private BigDecimal balance = BigDecimal.ZERO;
+    
+    @Column(name = "credit_limit", nullable = false, precision = 10, scale = 2)
+    private BigDecimal creditLimit = BigDecimal.ZERO;
+    
+    @Column(name = "total_debt", nullable = false, precision = 10, scale = 2)
+    private BigDecimal totalDebt = BigDecimal.ZERO;
+    
+    @Column(name = "total_credit", nullable = false, precision = 10, scale = 2)
+    private BigDecimal totalCredit = BigDecimal.ZERO;
+    
+    @OneToMany(mappedBy = "customer")
+    private List<Debt> debts = new ArrayList<>();
+    
+    @OneToMany(mappedBy = "customer")
+    private List<Transaction> transactions = new ArrayList<>();
+
+    @PrePersist
+    protected void onCreate() {
+        registrationDate = LocalDateTime.now();
+    }
+
+    public boolean canTakeDebt(BigDecimal amount) {
+        return totalDebt.add(amount).compareTo(creditLimit) <= 0;
+    }
+
+    public void updateBalance(BigDecimal amount) {
+        this.balance = this.balance.add(amount);
+    }
 
     @Override
     public final boolean equals(Object o) {

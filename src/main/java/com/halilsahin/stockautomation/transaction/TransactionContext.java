@@ -7,11 +7,21 @@ import java.time.LocalDateTime;
 import java.util.Map;
 
 @Getter
-@Builder
-public class TransactionContext {
-    private final String relatedEntity;
-    private final double amount;
-    private final LocalDateTime date;
-    private final Map<String, Object> additionalData;
-    // Diğer gerekli alanlar
+public class TransactionContext<T> {
+    private String relatedEntity;
+    private double amount;
+    private LocalDateTime date;
+    private Map<String, T> additionalData;
+
+    @Builder
+    public TransactionContext(String relatedEntity, double amount, LocalDateTime date, Map<String, T> additionalData) {
+        this.relatedEntity = relatedEntity;
+        this.amount = amount;
+        this.date = date;
+        this.additionalData = additionalData;
+    }
+
+    public T getData(String key) {
+        return additionalData.get(key);
+    }
 } 

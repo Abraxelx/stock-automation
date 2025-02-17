@@ -5,6 +5,7 @@ import lombok.*;
 import org.hibernate.proxy.HibernateProxy;
 
 import java.util.Objects;
+import java.math.BigDecimal;
 
 import com.halilsahin.stockautomation.enums.UnitType;
 
@@ -27,11 +28,11 @@ public class Product {
     @Column(nullable = false)
     private int stock;
 
-    @Column(nullable = false)
-    private double price;
+    @Column(precision = 10, scale = 2)
+    private BigDecimal price;
 
-    @Column(nullable = false)
-    private double purchasePrice;
+    @Column(precision = 10, scale = 2)
+    private BigDecimal purchasePrice;
 
     private String description;
 

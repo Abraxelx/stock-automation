@@ -1,25 +1,35 @@
 package com.halilsahin.stockautomation.service;
 
 import com.halilsahin.stockautomation.entity.Product;
+import com.halilsahin.stockautomation.enums.TransactionType;
 import com.halilsahin.stockautomation.exception.InsufficientStockException;
 import com.halilsahin.stockautomation.exception.ProductNotFoundException;
 import com.halilsahin.stockautomation.repository.ProductRepository;
+import com.halilsahin.stockautomation.transaction.TransactionContext;
+import com.halilsahin.stockautomation.transaction.TransactionHandler;
+import com.halilsahin.stockautomation.transaction.TransactionHandlerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
 @Transactional
 public class ProductService {
     private final ProductRepository productRepository;
+    private final TransactionHandlerFactory transactionHandlerFactory;
 
     @Autowired
-    public ProductService(ProductRepository productRepository) {
+    public ProductService(ProductRepository productRepository,
+                        TransactionHandlerFactory transactionHandlerFactory) {
         this.productRepository = productRepository;
+        this.transactionHandlerFactory = transactionHandlerFactory;
     }
 
     public List<Product> findAll() {
@@ -68,14 +78,16 @@ public class ProductService {
 
     public double calculateTotalPurchaseValue() {
         return productRepository.findAll().stream()
-                .mapToDouble(p -> p.getPurchasePrice() * p.getStock())
-                .sum();
+            .map(p -> p.getPurchasePrice().multiply(BigDecimal.valueOf(p.getStock())))
+            .reduce(BigDecimal.ZERO, BigDecimal::add)
+            .doubleValue();
     }
 
     public double calculateTotalSaleValue() {
         return productRepository.findAll().stream()
-                .mapToDouble(p -> p.getPrice() * p.getStock())
-                .sum();
+            .map(p -> p.getPrice().multiply(BigDecimal.valueOf(p.getStock())))
+            .reduce(BigDecimal.ZERO, BigDecimal::add)
+            .doubleValue();
     }
 
     public List<Product> findAllByOrderByStockDesc() {
@@ -90,12 +102,16 @@ public class ProductService {
 
     public List<Product> findAllByStockValue() {
         return productRepository.findAll().stream()
-                .sorted((p1, p2) -> {
-                    double value1 = p1.getStock() * p1.getPrice();
-                    double value2 = p2.getStock() * p2.getPrice();
-                    return Double.compare(value2, value1);
-                })
-                .collect(Collectors.toList());
+            .sorted((p1, p2) -> {
+                BigDecimal value1 = p1.getPrice() != null ? 
+                    p1.getPrice().multiply(BigDecimal.valueOf(p1.getStock())) : 
+                    BigDecimal.ZERO;
+                BigDecimal value2 = p2.getPrice() != null ? 
+                    p2.getPrice().multiply(BigDecimal.valueOf(p2.getStock())) : 
+                    BigDecimal.ZERO;
+                return value2.compareTo(value1);
+            })
+            .collect(Collectors.toList());
     }
 
     public void decreaseStock(Product product, int quantity) {
@@ -112,5 +128,30 @@ public class ProductService {
 
     public void delete(Long id) {
         productRepository.deleteById(id);
+    }
+
+    public void updateStock(Product product, int quantity) {
+        product.setStock(product.getStock() + quantity);
+        productRepository.save(product);
+
+        BigDecimal amount = product.getPrice() != null ? 
+            product.getPrice().multiply(BigDecimal.valueOf(Math.abs(quantity))) : 
+            BigDecimal.ZERO;
+
+        TransactionContext context = TransactionContext.builder()
+            .relatedEntity("Product")
+            .amount(amount.doubleValue())
+            .date(LocalDateTime.now())
+            .additionalData(Map.of(
+                "product", product,
+                "quantity", quantity,
+                "transactionType", quantity > 0 ? TransactionType.STOCK_IN : TransactionType.STOCK_OUT
+            ))
+            .build();
+
+        TransactionHandler handler = transactionHandlerFactory.getHandler(
+            quantity > 0 ? TransactionType.STOCK_IN : TransactionType.STOCK_OUT
+        );
+        handler.handleTransaction(context);
     }
 }

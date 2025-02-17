@@ -43,8 +43,8 @@ public class DebtPDFExporter {
     private void writeTableData(PdfPTable table) {
         for (Debt debt : debts) {
             table.addCell(String.valueOf(debt.getId()));
-            table.addCell(debt.getDebtor().getFirstName() + " " + debt.getDebtor().getLastName());
-            table.addCell(debt.getCreditor().getFirstName() + " " + debt.getCreditor().getLastName());
+            table.addCell(debt.getCustomer().getFirstName() + " " + debt.getCustomer().getLastName());
+            table.addCell(debt.getDirection().getDisplayName());
             table.addCell(String.format("%.2f TL", debt.getAmount()));
             table.addCell(debt.getDueDate().format(DATE_FORMATTER));
             table.addCell(debt.isPaid() ? "Ödendi" : "Ödenmedi");

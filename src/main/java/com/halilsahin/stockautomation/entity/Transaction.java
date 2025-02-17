@@ -1,6 +1,7 @@
 package com.halilsahin.stockautomation.entity;
 
 import com.halilsahin.stockautomation.enums.TransactionType;
+import com.halilsahin.stockautomation.enums.DebtType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.proxy.HibernateProxy;
@@ -26,7 +27,7 @@ public class Transaction {
     private BigDecimal amount;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "type", nullable = false)
     private TransactionType type;
 
     // İlişkili entity referansları
@@ -41,6 +42,10 @@ public class Transaction {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id")
     private Customer customer;
+
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name = "debt_id")
+    private Debt debt;
 
     // İşlem detayları
     @Column(length = 1000)
@@ -93,6 +98,7 @@ public class Transaction {
         transaction.setPreviousBalance(previousBalance);
         transaction.setNewBalance(newBalance);
         transaction.setDate(LocalDateTime.now());
+
         return transaction;
     }
 

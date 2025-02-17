@@ -11,6 +11,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,7 +20,7 @@ import java.util.List;
 public class SalesController {
     private final SaleService saleService;
     private List<SaleItem> saleItems = new ArrayList<>();
-    private double total = 0;
+    private BigDecimal total = BigDecimal.ZERO;
 
     @Autowired
     public SalesController(SaleService saleService) {
@@ -56,7 +57,9 @@ public class SalesController {
             }
             
             // Toplam tutarı yeniden hesapla
-            total = saleItems.stream().mapToDouble(SaleItem::getSubtotal).sum();
+            total = saleItems.stream()
+                .map(SaleItem::getSubtotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
             
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
@@ -72,7 +75,9 @@ public class SalesController {
             saleService.updateItemQuantity(barcode, quantity, saleItems);
             
             // Toplam tutarı yeniden hesapla
-            total = saleItems.stream().mapToDouble(SaleItem::getSubtotal).sum();
+            total = saleItems.stream()
+                .map(SaleItem::getSubtotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
             
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
@@ -90,7 +95,7 @@ public class SalesController {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Ürün bulunamadı: " + barcode));
 
-        total -= saleItem.getSubtotal(); // Toplam tutarı güncelle
+        total = total.subtract(saleItem.getSubtotal()); // Toplam tutarı güncelle
         saleItems.remove(saleItem); // Ürünü listeden çıkar
 
         // Görünümü güncelle
@@ -106,9 +111,9 @@ public class SalesController {
             @RequestParam double finalTotal,
             RedirectAttributes redirectAttributes) {
         try {
-            saleService.completeSale(saleItems, total, discountRate, finalTotal);
+            saleService.completeSale(saleItems, total.doubleValue(), discountRate, finalTotal);
             saleItems.clear();
-            total = 0;
+            total = BigDecimal.ZERO;
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Satış tamamlanamadı: " + e.getMessage());
             return "redirect:/sales";
@@ -121,7 +126,7 @@ public class SalesController {
     @GetMapping("/reset")
     public String resetSale() {
         saleItems.clear();
-        total = 0;
+        total = BigDecimal.ZERO;
         return "redirect:/sales";
     }
 }

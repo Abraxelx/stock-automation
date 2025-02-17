@@ -18,8 +18,4 @@ public enum DebtType {
         this.displayName = displayName;
     }
 
-    public String getDisplayName() {
-        return displayName;
-    }
-
 }

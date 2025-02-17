@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Borç Ödeme</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         .card {
@@ -28,283 +28,112 @@
         }
     </style>
 </head>
-<body>
-<!-- Navbar -->
-<div th:insert="~{fragments/navbar.html :: navbar}"></div>
+<body class="bg-light">
+    <div th:insert="~{fragments/navbar.html :: navbar}"></div>
 
-<div class="container mt-5">
-    <div class="card">
-        <div class="card-header">
-            <h2 class="mb-0">Borç Ödeme İşlemi</h2>
-        </div>
-        <div class="card-body">
-            <!-- Borç Detayları -->
-            <div class="row mb-4">
-                <div class="col-md-6">
-                    <h4>Borç Bilgileri</h4>
-                    <table class="table">
-                        <tr>
-                            <th>Borç ID:</th>
-                            <td th:text="${debt.id}"></td>
-                        </tr>
-                        <tr>
-                            <th>Borçlu:</th>
-                            <td th:text="${debt.debtor.firstName + ' ' + debt.debtor.lastName}"></td>
-                        </tr>
-                        <tr>
-                            <th>Toplam Borç:</th>
-                            <td th:text="${debt.amount + ' TL'}"></td>
-                        </tr>
-                        <tr>
-                            <th>Vade Tarihi:</th>
-                            <td th:text="${#temporals.format(debt.dueDate, 'dd MMM yyyy HH:mm')}"></td>
-                        </tr>
-                        <tr>
-                            <th>Belgeler:</th>
-                            <td>
-                                <span th:if="${debt.documents.empty}" class="text-muted">
-                                    <i class="fas fa-info-circle"></i> Belge bulunmamaktadır
-                                </span>
-                                <div th:if="${!debt.documents.empty}" class="btn-group">
-                                    <button type="button" class="btn btn-info btn-sm"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#documentModal">
-                                        <i class="fas fa-eye"></i> Belgeleri Görüntüle
-                                        <span class="badge bg-light text-dark ms-1" 
-                                              th:text="${debt.documents.size()}">
+    <div class="container mt-5">
+        <div class="card">
+            <div class="card-header">
+                <h3>
+                    <i class="fas fa-money-bill-wave"></i> Borç Ödeme
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h5>Borç Detayları</h5>
+                        <table class="table table-sm">
+                            <tr>
+                                <th>Müşteri:</th>
+                                <td>
+                                    <span th:if="${debt.customer != null}" 
+                                          th:text="${debt.customer.firstName + ' ' + debt.customer.lastName}">
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Tutar:</th>
+                                <td th:text="${debt.amount + ' TL'}"></td>
+                            </tr>
+                            <tr>
+                                <th>Vade Tarihi:</th>
+                                <td th:text="${#temporals.format(debt.dueDate, 'dd MMM yyyy')}"></td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <!-- Taksit Bilgileri -->
+                    <div class="col-md-6" th:if="${debt.installments != null && !debt.installments.empty}">
+                        <h5>Taksit Bilgileri</h5>
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Taksit No</th>
+                                    <th>Tutar</th>
+                                    <th>Vade</th>
+                                    <th>Durum</th>
+                                    <th>İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="installment, stat : ${debt.installments}">
+                                    <td th:text="${stat.count}"></td>
+                                    <td th:text="${installment.amount + ' TL'}"></td>
+                                    <td th:text="${#temporals.format(installment.dueDate, 'dd MMM yyyy')}"></td>
+                                    <td>
+                                        <span th:class="${installment.paid ? 'badge bg-success' : 'badge bg-danger'}"
+                                              th:text="${installment.paid ? 'Ödendi' : 'Ödenmedi'}">
                                         </span>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    </table>
+                                    </td>
+                                    <td>
+                                        <form th:if="${!installment.paid}" 
+                                              th:action="@{/debts/pay-installment/{id}(id=${installment.id})}" 
+                                              method="post" style="display: inline;">
+                                            <button type="submit" class="btn btn-sm btn-success">
+                                                <i class="fas fa-check"></i> Öde
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
 
-            <!-- Taksit Tablosu (Eğer taksitli borç ise) -->
-            <div th:if="${debt.installments != null and !debt.installments.isEmpty()}" class="mb-4">
-                <h4>Taksit Bilgileri</h4>
-                <table class="table table-striped">
-                    <thead>
-                    <tr>
-                        <th>Taksit No</th>
-                        <th>Tutar</th>
-                        <th>Vade Tarihi</th>
-                        <th>Durum</th>
-                        <th>İşlem</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr th:each="installment, iterStat : ${debt.installments}">
-                        <td th:text="${iterStat.count}"></td>
-                        <td th:text="${installment.amount + ' TL'}"></td>
-                        <td th:text="${#temporals.format(installment.dueDate, 'dd MMM yyyy HH:mm')}"></td>
-                        <td>
-                            <span th:if="${installment.paid}" class="badge bg-success">
-                                <i class="fas fa-check-circle"></i> Ödendi
-                            </span>
-                            <span th:unless="${installment.paid}" class="badge bg-warning">
-                                <i class="fas fa-clock"></i> Ödenmedi
-                            </span>
-                        </td>
-                        <td>
-                            <form th:if="${!installment.paid}" th:action="@{/debts/pay-installment/{id}(id=${installment.id})}" 
-                                  method="post" style="display: inline;">
-                                <button type="submit" class="btn btn-primary btn-sm">Taksiti Öde</button>
-                            </form>
-                        </td>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Tek Seferde Ödeme Formu -->
-            <div th:if="${!debt.paid}" class="card">
-                <div class="card-header">
-                    <h4 class="mb-0">Ödeme Yap</h4>
-                </div>
-                <div class="card-body">
-                    <form th:action="@{/debts/pay/{id}(id=${debt.id})}" method="post">
-                        <div class="mb-3">
+                <!-- Kısmi Ödeme Formu -->
+                <form th:action="@{/debts/pay/{id}(id=${debt.id})}" method="post" class="mb-4">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label for="amount" class="form-label">Ödenecek Tutar</label>
+                            <input type="number" id="amount" name="amount" class="form-control" 
+                                   th:max="${debt.amount}" step="0.01" required
+                                   th:value="${debt.amount}"/>
+                        </div>
+                        <div class="col-md-4">
                             <label for="paymentMethod" class="form-label">Ödeme Yöntemi</label>
-                            <select class="form-select" id="paymentMethod" name="paymentMethod" required>
+                            <select id="paymentMethod" name="paymentMethod" class="form-select" required>
+                                <option value="">Ödeme yöntemi seçin</option>
                                 <option th:each="method : ${T(com.halilsahin.stockautomation.enums.PaymentMethod).values()}"
                                         th:value="${method}"
                                         th:text="${method.displayName}">
                                 </option>
                             </select>
                         </div>
-                        <button type="submit" class="btn btn-success">Tamamını Öde</button>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Ödeme Durumu Mesajı -->
-            <div th:if="${debt.paid}" class="alert alert-success mt-4">
-                <i class="fas fa-check-circle"></i>
-                Bu borç ödenmiştir.
-                <div class="mt-2">
-                    <strong>Ödeme Tarihi:</strong> 
-                    <span th:text="${#temporals.format(debt.paymentDate, 'dd MMM yyyy HH:mm')}"></span>
-                </div>
-                <div>
-                    <strong>Ödeme Yöntemi:</strong>
-                    <span th:text="${debt.paymentMethod.displayName}"></span>
-                </div>
-            </div>
-
-            <!-- Geri Dönüş Butonu -->
-            <div class="mt-4">
-                <a href="/debts" class="btn btn-secondary">Borçlar Listesine Dön</a>
-            </div>
-
-            <!-- Belge Görüntüleme Bölümü -->
-            <div class="card mb-4">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h4 class="mb-0">Belgeler</h4>
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal">
-                        <i class="fas fa-plus"></i> Yeni Belge Ekle
-                    </button>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div th:each="doc : ${debt.documents}" class="col-md-4 mb-3">
-                            <div class="card">
-                                <div class="card-body">
-                                    <h5 class="card-title" th:text="${doc.fileName}"></h5>
-                                    <p class="card-text">
-                                        <small class="text-muted" th:text="${doc.fileType}"></small>
-                                        <small class="text-muted" th:text="${doc.fileSize + ' KB'}"></small>
-                                    </p>
-                                    <div class="btn-group">
-                                        <button type="button" class="btn btn-info btn-sm"
-                                                th:onclick="'viewDocument(' + ${doc.id} + ')'">
-                                            <i class="fas fa-eye"></i> Görüntüle
-                                        </button>
-                                        <a th:href="@{/debts/document/download/{id}(id=${doc.id})}" 
-                                           class="btn btn-secondary btn-sm">
-                                            <i class="fas fa-download"></i> İndir
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-check"></i> Ödemeyi Tamamla
+                            </button>
                         </div>
                     </div>
-                </div>
+                </form>
+
+                <a th:href="@{/debts}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Geri Dön
+                </a>
             </div>
-
-            <!-- Belge Görüntüleme Modalı -->
-            <div class="modal fade" id="documentModal" tabindex="-1">
-                <div class="modal-dialog modal-xl">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">Belge Görüntüleyici</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div id="documentViewer" class="document-viewer">
-                                <!-- Belge içeriği buraya yüklenecek -->
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
-                            <button type="button" class="btn btn-primary" id="downloadBtn">İndir</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Belge Yükleme Modalı -->
-            <div class="modal fade" id="uploadModal" tabindex="-1">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">Yeni Belge Yükle</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body">
-                            <form th:action="@{/debts/document/upload/{id}(id=${debt.id})}" 
-                                  method="post" 
-                                  enctype="multipart/form-data">
-                                <div class="mb-3">
-                                    <label for="files" class="form-label">Belge(ler) Seç</label>
-                                    <input type="file" class="form-control" id="files" 
-                                           name="files" multiple 
-                                           accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
-                                </div>
-                                <button type="submit" class="btn btn-primary">Yükle</button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- CSS -->
-            <style>
-            .document-viewer {
-                min-height: 500px;
-                width: 100%;
-                border: 1px solid #ddd;
-                position: relative;
-            }
-
-            .document-viewer iframe,
-            .document-viewer img {
-                width: 100%;
-                height: 100%;
-                position: absolute;
-                top: 0;
-                left: 0;
-                object-fit: contain;
-            }
-            </style>
-
-            <!-- JavaScript -->
-            <script>
-            function viewDocument(docId) {
-                const viewer = document.getElementById('documentViewer');
-                const modal = new bootstrap.Modal(document.getElementById('documentModal'));
-                
-                // Belgeyi yükle
-                fetch(`/debts/document/${docId}`)
-                    .then(response => {
-                        const contentType = response.headers.get('content-type');
-                        return response.blob().then(blob => {
-                            const objectUrl = URL.createObjectURL(blob);
-                            
-                            viewer.innerHTML = ''; // Önceki içeriği temizle
-                            
-                            if (contentType.includes('pdf')) {
-                                // PDF için
-                                const iframe = document.createElement('iframe');
-                                iframe.src = objectUrl;
-                                viewer.appendChild(iframe);
-                            } else if (contentType.includes('image')) {
-                                // Resim için
-                                const img = document.createElement('img');
-                                img.src = objectUrl;
-                                viewer.appendChild(img);
-                            }
-                            
-                            // İndirme butonunu ayarla
-                            const downloadBtn = document.getElementById('downloadBtn');
-                            downloadBtn.onclick = () => {
-                                const link = document.createElement('a');
-                                link.href = objectUrl;
-                                link.download = response.headers.get('content-disposition')
-                                    .split('filename=')[1].replace(/"/g, '');
-                                link.click();
-                            };
-                        });
-                    });
-                
-                modal.show();
-            }
-            </script>
         </div>
     </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
