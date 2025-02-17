@@ -87,8 +87,10 @@
                         <i class="fas fa-ruler"></i> Birim
                     </label>
                     <select class="form-select" id="unitType" name="unitType" required>
-                        <option value="PIECE">ADET</option>
-                        <option value="SET">TAKIM</option>
+                        <option th:each="unitType : ${T(com.halilsahin.stockautomation.enums.UnitType).values()}"
+                                th:value="${unitType}"
+                                th:text="${unitType.displayName}">
+                        </option>
                     </select>
                 </div>
 

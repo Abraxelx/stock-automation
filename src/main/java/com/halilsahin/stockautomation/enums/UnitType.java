@@ -2,7 +2,8 @@ package com.halilsahin.stockautomation.enums;
 
 public enum UnitType {
     PIECE("ADET"),
-    SET("TAKIM");
+    SET("TAKIM"),
+    PACKAGE("PAKET");
 
     private final String displayName;
 
