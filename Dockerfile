@@ -11,7 +11,7 @@ COPY --from=builder /app/build/libs/stock-automation-*.jar app.jar
 
 # Metadata
 LABEL maintainer="Halil Sahin"
-LABEL version="2.0.0"
+LABEL version="2.0.1"
 LABEL description="Stock Automation Application"
 
 # Health check
