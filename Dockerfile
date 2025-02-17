@@ -1,17 +1,17 @@
 # Build stage
-FROM --platform=$BUILDPLATFORM gradle:8.0.2-jdk17 AS builder
+FROM gradle:8.0.2-jdk17 AS builder
 WORKDIR /app
 COPY . .
 RUN gradle bootJar --no-daemon
 
 # Run stage
-FROM --platform=$TARGETPLATFORM eclipse-temurin:17-jre-jammy
+FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
 COPY --from=builder /app/build/libs/stock-automation-*.jar app.jar
 
 # Metadata
 LABEL maintainer="Halil Sahin"
-LABEL version="1.2.2"
+LABEL version="2.0.0"
 LABEL description="Stock Automation Application"
 
 # Health check

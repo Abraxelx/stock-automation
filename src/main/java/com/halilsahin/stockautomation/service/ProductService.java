@@ -9,6 +9,8 @@ import com.halilsahin.stockautomation.transaction.TransactionContext;
 import com.halilsahin.stockautomation.transaction.TransactionHandler;
 import com.halilsahin.stockautomation.transaction.TransactionHandlerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -153,5 +155,9 @@ public class ProductService {
             quantity > 0 ? TransactionType.STOCK_IN : TransactionType.STOCK_OUT
         );
         handler.handleTransaction(context);
+    }
+
+    public Page<Product> findAllPaged(Pageable pageable) {
+        return productRepository.findAll(pageable);
     }
 }

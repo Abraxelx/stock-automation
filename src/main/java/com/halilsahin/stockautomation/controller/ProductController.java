@@ -9,6 +9,10 @@ import com.halilsahin.stockautomation.repository.ProductRepository;
 import com.halilsahin.stockautomation.repository.TransactionRepository;
 import com.halilsahin.stockautomation.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -25,6 +29,8 @@ import java.util.Map;
 @CrossOrigin
 public class ProductController {
 
+    private static final int PAGE_SIZE = 20; // Sayfa başına gösterilecek ürün sayısı
+
     private final ProductRepository productRepository;
     private final ProductService productService;
     private final TransactionRepository transactionRepository;
@@ -36,9 +42,25 @@ public class ProductController {
         this.transactionRepository = transactionRepository;
     }
     @GetMapping
-    public String showProductPage(Model model) {
-        model.addAttribute(Constants.PRODUCTS, productService.findAllByOrderByIdDesc());
-        return Constants.PRODUCTS;
+    public String showProductPage(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "desc") String direction,
+            Model model) {
+        
+        Sort sort = Sort.by(direction.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC, sortBy);
+        Pageable pageable = PageRequest.of(page, PAGE_SIZE, sort);
+        
+        Page<Product> productPage = productService.findAllPaged(pageable);
+        
+        model.addAttribute("products", productPage.getContent());
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", productPage.getTotalPages());
+        model.addAttribute("totalItems", productPage.getTotalElements());
+        model.addAttribute("sortBy", sortBy);
+        model.addAttribute("direction", direction);
+        
+        return "products";
     }
 
     @PostMapping(value = "/check-barcode", produces = "application/json")
