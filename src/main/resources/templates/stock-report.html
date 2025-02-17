@@ -138,6 +138,51 @@
                     </tbody>
                 </table>
             </div>
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div>
+                    Toplam <span th:text="${totalItems}"></span> ürün
+                </div>
+                
+                <nav th:if="${totalPages > 1}">
+                    <ul class="pagination">
+                        <!-- İlk Sayfa -->
+                        <li class="page-item" th:classappend="${currentPage == 0 ? 'disabled' : ''}">
+                            <a class="page-link" th:href="@{/stock-report(page=0,sortBy=${sortBy},direction=${direction})}">
+                                <i class="fas fa-angle-double-left"></i>
+                            </a>
+                        </li>
+                        
+                        <!-- Önceki Sayfa -->
+                        <li class="page-item" th:classappend="${currentPage == 0 ? 'disabled' : ''}">
+                            <a class="page-link" th:href="@{/stock-report(page=${currentPage - 1},sortBy=${sortBy},direction=${direction})}">
+                                <i class="fas fa-angle-left"></i>
+                            </a>
+                        </li>
+                        
+                        <!-- Sayfa Numaraları -->
+                        <li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages - 1)}" 
+                            th:classappend="${currentPage == i ? 'active' : ''}"
+                            th:if="${i >= currentPage - 2 && i <= currentPage + 2}">
+                            <a class="page-link" th:href="@{/stock-report(page=${i},sortBy=${sortBy},direction=${direction})}" 
+                               th:text="${i + 1}"></a>
+                        </li>
+                        
+                        <!-- Sonraki Sayfa -->
+                        <li class="page-item" th:classappend="${currentPage == totalPages - 1 ? 'disabled' : ''}">
+                            <a class="page-link" th:href="@{/stock-report(page=${currentPage + 1},sortBy=${sortBy},direction=${direction})}">
+                                <i class="fas fa-angle-right"></i>
+                            </a>
+                        </li>
+                        
+                        <!-- Son Sayfa -->
+                        <li class="page-item" th:classappend="${currentPage == totalPages - 1 ? 'disabled' : ''}">
+                            <a class="page-link" th:href="@{/stock-report(page=${totalPages - 1},sortBy=${sortBy},direction=${direction})}">
+                                <i class="fas fa-angle-double-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
         </div>
 
         <!-- Kritik Stok Uyarısı -->
