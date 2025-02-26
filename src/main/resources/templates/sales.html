@@ -44,10 +44,19 @@
 <div th:insert="~{fragments/navbar.html :: navbar}"></div>
 
 <div class="container mt-5">
-  <div th:if="${error}" class="alert alert-danger" role="alert">
+  <!-- Mesajlar -->
+  <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+    <i class="fas fa-check-circle"></i>
+    <span th:text="${success}"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+
+  <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
     <i class="fas fa-exclamation-circle"></i>
     <span th:text="${error}"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
   </div>
+
   <!-- Satış Ekleme Formu -->
   <div class="form-section">
     <h2 class="page-title">
@@ -133,16 +142,57 @@
           </h4>
         </div>
         <div class="col-md-6 text-end">
-          <form th:action="@{/sales/complete}" method="post" class="d-inline">
-            <input type="hidden" name="discountRate" id="hiddenDiscountRate" value="0">
-            <input type="hidden" name="finalTotal" id="hiddenFinalTotal" th:value="${total}">
-            <button type="submit" class="btn btn-success">
-              <i class="fas fa-check-circle"></i> Satışı Tamamla
+          <button class="btn btn-warning me-2" onclick="resetSale()">
+            <i class="fas fa-trash"></i> Sepeti Temizle
+          </button>
+          
+          <!-- Bakiyeye Aktar Butonu -->
+          <button class="btn btn-info me-2" data-bs-toggle="modal" data-bs-target="#transferToDebtModal">
+            <i class="fas fa-exchange-alt"></i> Bakiyeye Aktar
+          </button>
+          
+          <!-- Satışı tamamla butonu - doğrudan formun içine alıyorum -->
+          <form id="completeSaleForm" th:action="@{/sales/complete}" method="post" class="d-inline">
+            <input type="hidden" id="hiddenDiscountRate" name="discountRate" value="0">
+            <input type="hidden" id="hiddenFinalTotal" name="finalTotal" th:value="${total}">
+            <button type="button" class="btn btn-success" onclick="completeSale()">
+              <i class="fas fa-check"></i> Satışı Tamamla
             </button>
           </form>
-          <a href="/sales/reset" class="btn btn-secondary">
-            <i class="fas fa-trash-alt"></i> Sepeti Temizle
-          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bakiyeye Aktarma Modalı -->
+  <div class="modal fade" id="transferToDebtModal">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Bakiyeye Aktar</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form th:action="@{/sales/transfer-to-debt}" method="post">
+            <div class="mb-3">
+              <label class="form-label">Müşteri Seçin</label>
+              <select name="customerId" class="form-select" required>
+                <option value="">Müşteri seçin</option>
+                <option th:each="customer : ${customers}"
+                        th:value="${customer.id}"
+                        th:text="${customer.firstName + ' ' + customer.lastName}">
+                </option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Vade Tarihi</label>
+              <input type="date" name="dueDate" class="form-control" required
+                     th:value="${#temporals.format(#temporals.createNow().plusMonths(1), 'yyyy-MM-dd')}">
+            </div>
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-save"></i> Onayla
+            </button>
+          </form>
         </div>
       </div>
     </div>
@@ -209,6 +259,28 @@
     // Hidden input'ları güncelle
     document.getElementById('hiddenDiscountRate').value = discountRate;
     document.getElementById('hiddenFinalTotal').value = finalTotal;
+  }
+
+  function completeSale() {
+    const discountRate = parseFloat(document.getElementById('discountRate').value) || 0;
+    let finalTotal = parseFloat(document.getElementById('finalTotal').textContent);
+    
+    // Eğer finalTotal'da " TL" var ise temizleyelim
+    if (isNaN(finalTotal)) {
+      const finalTotalText = document.getElementById('finalTotal').textContent;
+      finalTotal = parseFloat(finalTotalText.replace(" TL", "").replace(",", "."));
+    }
+    
+    // Hidden input değerlerini güncelle
+    document.getElementById('hiddenDiscountRate').value = discountRate;
+    document.getElementById('hiddenFinalTotal').value = finalTotal;
+    
+    // Formu gönder
+    document.getElementById('completeSaleForm').submit();
+  }
+
+  function resetSale() {
+    window.location.href = '/sales/reset';
   }
 </script>
 </body>

@@ -75,11 +75,13 @@
                         <th>Ödeme Tarihi:</th>
                         <td th:text="${#temporals.format(debt.paymentDate, 'dd MMMM yyyy EEEE - HH:mm')}"></td>
                     </tr>
-                    <tr th:if="${debt.product != null}">
-                        <th>İlgili Ürün:</th>
+                    <tr th:if="${debt.debtType == T(com.halilsahin.stockautomation.enums.DebtType).PRODUCT}">
+                        <th>İlgili Ürünler:</th>
                         <td>
-                            <a th:href="@{/products/detail/{id}(id=${debt.product.id})}" 
-                               th:text="${debt.product.name}"></a>
+                            <div th:each="debtProduct : ${debt.products}">
+                                <a th:href="@{/products/detail/{id}(id=${debtProduct.product.id})}" 
+                                   th:text="${debtProduct.product.name}"></a>
+                            </div>
                         </td>
                     </tr>
                 </table>
@@ -121,6 +123,21 @@
                             <span th:text="${doc.fileName}"></span>
                         </a>
                     </div>
+                </div>
+
+                <div class="col-md-6" th:if="${debt.debtType == T(com.halilsahin.stockautomation.enums.DebtType).PRODUCT}">
+                    <h6 class="mb-3">Ürün Bilgileri</h6>
+                    <table class="table table-sm">
+                        <tr th:each="debtProduct : ${debt.products}">
+                            <td>
+                                <strong th:text="${debtProduct.product.name}"></strong><br>
+                                <small class="text-muted" th:text="${debtProduct.product.barcode}"></small><br>
+                                <span th:text="${debtProduct.quantity + ' adet'}"></span> x 
+                                <span th:text="${#numbers.formatDecimal(debtProduct.unitPrice, 0, 'COMMA', 2, 'POINT')} + ' TL'"></span> = 
+                                <strong th:text="${#numbers.formatDecimal(debtProduct.subtotal, 0, 'COMMA', 2, 'POINT')} + ' TL'"></strong>
+                            </td>
+                        </tr>
+                    </table>
                 </div>
             </div>
         </div>

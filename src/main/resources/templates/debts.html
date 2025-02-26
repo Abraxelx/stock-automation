@@ -99,7 +99,7 @@
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Alınan Borçlar</h5>
-                    <p class="card-text" th:text="${#numbers.formatDecimal(stats.totalPayableAmount, 1, 2) + ' TL'}"></p>
+                    <h3 th:text="${#numbers.formatDecimal(stats.totalPayableAmount, 0, 'COMMA', 2, 'POINT')} + ' TL'"></h3>
                 </div>
             </div>
         </div>
@@ -107,7 +107,7 @@
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Verilen Borçlar</h5>
-                    <p class="card-text" th:text="${#numbers.formatDecimal(stats.totalReceivableAmount, 1, 2) + ' TL'}"></p>
+                    <h3 th:text="${#numbers.formatDecimal(stats.totalReceivableAmount, 0, 'COMMA', 2, 'POINT')} + ' TL'"></h3>
                 </div>
             </div>
         </div>
@@ -115,7 +115,7 @@
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Ödenen Borçlar</h5>
-                    <p class="card-text" th:text="${#numbers.formatDecimal(stats.paidDebtAmount, 1, 2) + ' TL'}"></p>
+                    <h3 th:text="${#numbers.formatDecimal(stats.paidDebtAmount, 0, 'COMMA', 2, 'POINT')} + ' TL'"></h3>
                 </div>
             </div>
         </div>
@@ -142,8 +142,10 @@
         <ul class="list-unstyled">
             <li th:each="debt : ${stats.overdueDebts}" th:if="${debt.customer != null}">
                 <i class="fas fa-arrow-right"></i>
-                <span th:text="${debt.customer.firstName + ' ' + debt.customer.lastName}"></span> -
-                <span th:text="${debt.amount + ' TL'}"></span>
+                <div class="debt-summary">
+                    <span th:text="${debt.customer.firstName + ' ' + debt.customer.lastName}"></span> -
+                    <span th:text="${debt.amount + ' TL'}"></span>
+                </div>
                 <small class="text-muted" 
                         th:text="'(Vade: ' + ${#temporals.format(debt.dueDate, 'dd MMM yyyy')} + ')'">
                 </small>
@@ -154,15 +156,107 @@
     <div class="alert alert-warning" th:if="${stats != null && stats.upcomingDebts != null && !stats.upcomingDebts.empty}">
         <h5><i class="fas fa-clock"></i> Vadesi Yaklaşan Borçlar</h5>
         <ul class="list-unstyled">
-            <li th:each="debt : ${stats.upcomingDebts}">
+            <li th:each="debt : ${stats.upcomingDebts}" th:if="${debt.customer != null}">
                 <i class="fas fa-arrow-right"></i>
-                <span th:text="${debt.debtor.firstName + ' ' + debt.debtor.lastName}"></span> -
-                <span th:text="${debt.amount + ' TL'}"></span>
+                <div class="debt-summary">
+                    <span th:text="${debt.customer.firstName + ' ' + debt.customer.lastName}"></span> -
+                    <span th:text="${debt.amount + ' TL'}"></span>
+                </div>
                 <small class="text-muted" 
-                        th:text="'(Vade: ' + ${#temporals.format(debt.dueDate, 'dd MMM yyyy')} + ')'">
-                </small>
+                        th:text="'(Vade: ' + ${#temporals.format(debt.dueDate, 'dd MMM yyyy')} + ')'"></small>
             </li>
         </ul>
+    </div>
+
+    <!-- Filtreleme Bölümü -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">
+                <i class="fas fa-filter"></i> Borç Filtreleme
+            </h5>
+        </div>
+        <div class="card-body">
+            <form action="/debts/filter" method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="customerFilter" class="form-label">Müşteri</label>
+                    <select id="customerFilter" name="customerId" class="form-select">
+                        <option value="">Tüm Müşteriler</option>
+                        <option th:each="customer : ${customers}" 
+                                th:value="${customer.id}"
+                                th:text="${customer.firstName + ' ' + customer.lastName}">
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="directionFilter" class="form-label">Borç Yönü</label>
+                    <select id="directionFilter" name="direction" class="form-select">
+                        <option value="">Tümü</option>
+                        <option value="PAYABLE">Borç Alındı (PAYABLE)</option>
+                        <option value="RECEIVABLE">Borç Verildi (RECEIVABLE)</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="typeFilter" class="form-label">Borç Tipi</label>
+                    <select id="typeFilter" name="debtType" class="form-select">
+                        <option value="">Tümü</option>
+                        <option th:each="type : ${T(com.halilsahin.stockautomation.enums.DebtType).values()}"
+                                th:value="${type}"
+                                th:text="${type.displayName}">
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="statusFilter" class="form-label">Ödeme Durumu</label>
+                    <select id="statusFilter" name="paid" class="form-select">
+                        <option value="">Tümü</option>
+                        <option value="true">Ödendi</option>
+                        <option value="false">Ödenmedi</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="dateFilter" class="form-label">Vade Tarihi Aralığı</label>
+                    <select id="dateFilter" name="dateRange" class="form-select">
+                        <option value="">Tüm Zamanlar</option>
+                        <option value="TODAY">Bugün</option>
+                        <option value="THIS_WEEK">Bu Hafta</option>
+                        <option value="THIS_MONTH">Bu Ay</option>
+                        <option value="OVERDUE">Vadesi Geçmiş</option>
+                        <option value="UPCOMING">Vadesi Yaklaşan</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="startDate" class="form-label">Başlangıç Tarihi</label>
+                    <input type="date" id="startDate" name="startDate" class="form-control">
+                </div>
+                <div class="col-md-3">
+                    <label for="endDate" class="form-label">Bitiş Tarihi</label>
+                    <input type="date" id="endDate" name="endDate" class="form-control">
+                </div>
+                <div class="col-md-3">
+                    <label for="sortBy" class="form-label">Sıralama</label>
+                    <div class="input-group">
+                        <select id="sortBy" name="sortBy" class="form-select">
+                            <option value="dueDate">Vade Tarihi</option>
+                            <option value="amount">Tutar</option>
+                            <option value="customer.firstName">Müşteri Adı</option>
+                            <option value="id">ID</option>
+                        </select>
+                        <select name="direction" class="form-select">
+                            <option value="asc">Artan</option>
+                            <option value="desc">Azalan</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Filtrele
+                    </button>
+                    <a href="/debts" class="btn btn-secondary">
+                        <i class="fas fa-redo"></i> Sıfırla
+                    </a>
+                </div>
+            </form>
+        </div>
     </div>
 
     <!-- Borç Listeleme Tablosu -->
@@ -174,13 +268,28 @@
             <table class="table table-striped">
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Müşteri</th>
-                        <th>Borç Yönü</th>
+                        <th style="cursor: pointer;" onclick="sortTable('id')">
+                            ID <i class="fas fa-sort"></i>
+                        </th>
+                        <th style="cursor: pointer;" onclick="sortTable('customer')">
+                            Müşteri <i class="fas fa-sort"></i>
+                        </th>
+                        <th style="cursor: pointer;" onclick="sortTable('direction')">
+                            Borç Yönü <i class="fas fa-sort"></i>
+                        </th>
+                        <th style="cursor: pointer;" onclick="sortTable('debtType')">
+                            Borç Tipi <i class="fas fa-sort"></i>
+                        </th>
                         <th>Ürün</th>
-                        <th>Tutar</th>
-                        <th>Vade Tarihi</th>
-                        <th>Durum</th>
+                        <th style="cursor: pointer;" onclick="sortTable('amount')">
+                            Tutar <i class="fas fa-sort"></i>
+                        </th>
+                        <th style="cursor: pointer;" onclick="sortTable('dueDate')">
+                            Vade Tarihi <i class="fas fa-sort"></i>
+                        </th>
+                        <th style="cursor: pointer;" onclick="sortTable('isPaid')">
+                            Durum <i class="fas fa-sort"></i>
+                        </th>
                         <th>Ödeme Yöntemi</th>
                         <th>Taksit</th>
                         <th>Belge</th>
@@ -197,20 +306,26 @@
                             <span th:if="${debt.customer == null}" class="text-muted">-</span>
                         </td>
                         <td>
-                            <span th:if="${debt.direction == T(com.halilsahin.stockautomation.enums.DebtDirection).PAYABLE}" 
+                            <span th:if="${debt.direction != null && debt.direction == T(com.halilsahin.stockautomation.enums.DebtDirection).PAYABLE}" 
                                   class="badge bg-danger">
                                 <i class="fas fa-arrow-down"></i> Borç Alındı
                             </span>
-                            <span th:if="${debt.direction == T(com.halilsahin.stockautomation.enums.DebtDirection).RECEIVABLE}" 
+                            <span th:if="${debt.direction != null && debt.direction == T(com.halilsahin.stockautomation.enums.DebtDirection).RECEIVABLE}" 
                                   class="badge bg-success">
                                 <i class="fas fa-arrow-up"></i> Borç Verildi
                             </span>
+                            <span th:if="${debt.direction == null}" class="badge bg-secondary">
+                                <i class="fas fa-question"></i> Belirsiz
+                            </span>
                         </td>
+                        <td th:text="${debt.debtType.displayName}"></td>
                         <td>
-                            <span th:if="${debt.product != null}" th:text="${debt.product.name}"></span>
-                            <span th:if="${debt.product == null}" class="text-muted">-</span>
+                            <span th:if="${debt.debtType == T(com.halilsahin.stockautomation.enums.DebtType).PRODUCT}">
+                                <span th:each="debtProduct : ${debt.products}" th:if="${debtProduct != null && debtProduct.product != null}" th:text="${debtProduct.product.name + ' '}"></span>
+                            </span>
+                            <span th:unless="${debt.debtType == T(com.halilsahin.stockautomation.enums.DebtType).PRODUCT}" class="text-muted">-</span>
                         </td>
-                        <td th:text="${#numbers.formatDecimal(debt.amount, 1, 2) + ' TL'}"></td>
+                        <td th:text="${#numbers.formatDecimal(debt.amount, 0, 'COMMA', 2, 'POINT')} + ' TL'"></td>
                         <td th:text="${#temporals.format(debt.dueDate, 'dd/MM/yyyy')}"></td>
                         <td>
                             <span th:if="${debt.isPaid}" class="badge bg-success">
@@ -408,20 +523,17 @@
                                 </tr>
                             </table>
                         </div>
-                        <div class="col-md-6" th:if="${debt.product != null}">
+                        <div class="col-md-6" th:if="${debt.debtType == T(com.halilsahin.stockautomation.enums.DebtType).PRODUCT}">
                             <h6 class="mb-3">Ürün Bilgileri</h6>
                             <table class="table table-sm">
-                                <tr>
-                                    <th>Ürün Adı:</th>
-                                    <td th:text="${debt.product.name}"></td>
-                                </tr>
-                                <tr>
-                                    <th>Barkod:</th>
-                                    <td th:text="${debt.product.barcode}"></td>
-                                </tr>
-                                <tr>
-                                    <th>Birim Fiyat:</th>
-                                    <td th:text="${debt.product.price + ' TL'}"></td>
+                                <tr th:each="debtProduct : ${debt.products}" th:if="${debtProduct != null && debtProduct.product != null}">
+                                    <td>
+                                        <strong th:text="${debtProduct.product.name}"></strong><br>
+                                        <small class="text-muted" th:text="${debtProduct.product.barcode}"></small><br>
+                                        <span th:text="${debtProduct.quantity + ' adet'}"></span> x 
+                                        <span th:text="${#numbers.formatDecimal(debtProduct.unitPrice, 0, 'COMMA', 2, 'POINT')} + ' TL'"></span> = 
+                                        <strong th:text="${#numbers.formatDecimal(debtProduct.subtotal, 0, 'COMMA', 2, 'POINT')} + ' TL'"></strong>
+                                    </td>
                                 </tr>
                             </table>
                         </div>
@@ -442,78 +554,73 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form th:action="@{/debts/add}" method="post" enctype="multipart/form-data">
-                        <div class="row g-3">
-                            <!-- Müşteri Seçimi -->
-                            <div class="col-md-6">
-                                <label class="form-label">Müşteri</label>
+                    <!-- Normal Borç Girişi Formu -->
+                    <form th:action="@{/debts/add}" method="post" enctype="multipart/form-data" id="normalDebtForm">
+                        <!-- Ortak alanlar -->
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label>Müşteri</label>
                                 <select name="customerId" class="form-select" required>
-                                    <option value="">Müşteri seçin</option>
-                                    <option th:each="customer : ${customers}"
+                                    <option value="">Müşteri Seçin</option>
+                                    <option th:each="customer : ${customers}" 
                                             th:value="${customer.id}"
                                             th:text="${customer.firstName + ' ' + customer.lastName}">
                                     </option>
                                 </select>
                             </div>
-
-                            <!-- Borç Yönü -->
-                            <div class="col-md-6">
-                                <label class="form-label">Borç Yönü</label>
-                                <select name="direction" class="form-select" required>
-                                    <option value="">Borç yönü seçin</option>
-                                    <option th:each="direction : ${T(com.halilsahin.stockautomation.enums.DebtDirection).values()}"
-                                            th:value="${direction}"
-                                            th:text="${direction.displayName}">
-                                    </option>
-                                </select>
-                            </div>
-
-                            <!-- Tutar -->
-                            <div class="col-md-6">
-                                <label class="form-label">Tutar</label>
-                                <div class="input-group">
-                                    <input type="number" name="amount" class="form-control" required step="0.01" min="0">
-                                    <span class="input-group-text">TL</span>
-                                </div>
-                            </div>
-
-                            <!-- Vade Tarihi -->
-                            <div class="col-md-6">
-                                <label class="form-label">Vade Tarihi</label>
-                                <input type="datetime-local" name="dueDate" class="form-control" required>
-                            </div>
-
-                            <!-- Borç Türü -->
-                            <div class="col-md-6">
-                                <label class="form-label">Borç Türü</label>
-                                <select name="debtType" class="form-select" required>
-                                    <option value="">Borç türü seçin</option>
+                            <div class="col-md-4">
+                                <label>Borç Tipi</label>
+                                <select name="debtType" class="form-select" required onchange="toggleDebtForm(this.value)">
                                     <option th:each="type : ${T(com.halilsahin.stockautomation.enums.DebtType).values()}"
+                                            th:if="${type != T(com.halilsahin.stockautomation.enums.DebtType).PRODUCT}"
                                             th:value="${type}"
                                             th:text="${type.displayName}">
                                     </option>
                                 </select>
                             </div>
+                            <!-- Diğer ortak alanlar... -->
+                        </div>
+                    </form>
 
-                            <!-- Taksit Sayısı -->
-                            <div class="col-md-6">
-                                <label class="form-label">Taksit Sayısı</label>
-                                <input type="number" name="installments" class="form-control" min="1" value="1">
-                            </div>
+                    <!-- Ürün Borcu Girişi Formu -->
+                    <form th:action="@{/debts/add-product-debt}" method="post" enctype="multipart/form-data" 
+                          id="productDebtForm" style="display:none;">
+                        <!-- Ortak alanlar -->
+                        <div class="row mb-3">
+                            <!-- Müşteri ve diğer ortak alanlar... -->
+                        </div>
 
-                            <!-- Belge Yükleme -->
-                            <div class="col-12">
-                                <label class="form-label">Belgeler</label>
-                                <input type="file" name="documentFile" class="form-control" multiple>
+                        <!-- Ürün Listesi -->
+                        <div id="productList">
+                            <div class="product-item row mb-2">
+                                <div class="col-md-4">
+                                    <select name="productIds" class="form-select" required>
+                                        <option value="">Ürün Seçin</option>
+                                        <option th:each="product : ${products}"
+                                                th:value="${product.id}"
+                                                th:text="${product.name + ' - ' + product.price + ' TL'}">
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="number" name="quantities" class="form-control" 
+                                           placeholder="Miktar" required min="1">
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="number" name="prices" class="form-control" 
+                                           placeholder="Birim Fiyat" required step="0.01">
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="button" class="btn btn-danger" onclick="removeProduct(this)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="text-end mt-4">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save"></i> Kaydet
-                            </button>
-                        </div>
+                        <button type="button" class="btn btn-secondary mb-3" onclick="addProduct()">
+                            <i class="fas fa-plus"></i> Ürün Ekle
+                        </button>
                     </form>
                 </div>
             </div>
@@ -549,6 +656,71 @@ function viewDocument(docId) {
         `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,status=yes`
     );
 }
+
+function toggleDebtForm(debtType) {
+    if (debtType === 'PRODUCT') {
+        document.getElementById('normalDebtForm').style.display = 'none';
+        document.getElementById('productDebtForm').style.display = 'block';
+    } else {
+        document.getElementById('normalDebtForm').style.display = 'block';
+        document.getElementById('productDebtForm').style.display = 'none';
+    }
+}
+
+// Client-side sıralama fonksiyonu
+function sortTable(column) {
+    // Mevcut sıralama yönünü kontrol et
+    const currentDirection = new URLSearchParams(window.location.search).get('direction') || 'desc';
+    const newDirection = currentDirection === 'desc' ? 'asc' : 'desc';
+    
+    // Mevcut URL parametrelerini al
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    // Sıralama parametrelerini güncelle
+    urlParams.set('sortBy', column);
+    urlParams.set('direction', newDirection);
+    
+    // Yeni URL'ye yönlendir
+    window.location.href = window.location.pathname + '?' + urlParams.toString();
+}
+
+// Tarih filtresi seçildiğinde manuel tarih alanlarını devre dışı bırak
+document.getElementById('dateFilter').addEventListener('change', function() {
+    const manualDates = document.getElementById('dateFilter').value !== '';
+    document.getElementById('startDate').disabled = manualDates;
+    document.getElementById('endDate').disabled = manualDates;
+});
+
+// Sayfa yüklendiğinde URL parametrelerine göre form alanlarını doldur
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    // Form alanlarını doldur
+    if (urlParams.has('customerId')) {
+        document.getElementById('customerFilter').value = urlParams.get('customerId');
+    }
+    if (urlParams.has('direction')) {
+        document.getElementById('directionFilter').value = urlParams.get('direction');
+    }
+    if (urlParams.has('debtType')) {
+        document.getElementById('typeFilter').value = urlParams.get('debtType');
+    }
+    if (urlParams.has('paid')) {
+        document.getElementById('statusFilter').value = urlParams.get('paid');
+    }
+    if (urlParams.has('dateRange')) {
+        document.getElementById('dateFilter').value = urlParams.get('dateRange');
+    }
+    if (urlParams.has('startDate')) {
+        document.getElementById('startDate').value = urlParams.get('startDate');
+    }
+    if (urlParams.has('endDate')) {
+        document.getElementById('endDate').value = urlParams.get('endDate');
+    }
+    if (urlParams.has('sortBy')) {
+        document.getElementById('sortBy').value = urlParams.get('sortBy');
+    }
+});
 </script>
 </body>
 </html>

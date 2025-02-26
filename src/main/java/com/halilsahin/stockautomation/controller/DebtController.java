@@ -66,7 +66,6 @@ public class DebtController {
                          @RequestParam String dueDate,
                          @RequestParam DebtType debtType,
                          @RequestParam DebtDirection direction,
-                         @RequestParam(required = false) Long productId,
                          @RequestParam(required = false) MultipartFile documentFile,
                          @RequestParam(required = false) Integer installments,
                          Model model) {
@@ -77,15 +76,12 @@ public class DebtController {
             return Constants.DEBTS;
         }
 
-        Product product = (productId != null) ? productService.findById(productId) : null;
-
         Debt debt = new Debt();
         debt.setCustomer(customer);
         debt.setAmount(amount);
         debt.setDueDate(LocalDateTime.parse(dueDate));
         debt.setDebtType(debtType);
         debt.setDirection(direction);
-        debt.setProduct(product);
         debt.setPaid(false);
         debt.setCreatedAt(LocalDateTime.now());
 
@@ -125,13 +121,57 @@ public class DebtController {
         }
 
         debtService.addDebt(debt);
+        return "redirect:/debts";
+    }
 
+    // Ürün borcu için ayrı endpoint
+    @PostMapping("/add-product-debt")
+    public String addProductDebt(@RequestParam Long customerId,
+                               @RequestParam String dueDate,
+                               @RequestParam DebtDirection direction,
+                               @RequestParam List<Long> productIds,
+                               @RequestParam List<Integer> quantities,
+                               @RequestParam List<BigDecimal> prices,
+                               @RequestParam(required = false) Integer installments,
+                               @RequestParam(required = false) MultipartFile documentFile,
+                               Model model) {
+
+        Customer customer = customerService.findCustomerById(customerId);
+        if (customer == null) {
+            model.addAttribute("error", "Müşteri bulunamadı");
+            return Constants.DEBTS;
+        }
+
+        // Yeni borç kaydı oluştur
+        Debt debt = new Debt();
+        debt.setCustomer(customer);
+        debt.setDueDate(LocalDateTime.parse(dueDate));
+        debt.setDebtType(DebtType.PRODUCT); // Ürün borcu
+        debt.setDirection(direction);
+        debt.setPaid(false);
+        debt.setCreatedAt(LocalDateTime.now());
+
+        // Ürünleri ekle
+        for (int i = 0; i < productIds.size(); i++) {
+            Product product = productService.findById(productIds.get(i));
+            if (product != null) {
+                debt.addProduct(product, quantities.get(i), prices.get(i));
+            }
+        }
+
+        // Taksit ve belge işlemleri aynı şekilde devam eder...
+        // ...
+
+        debtService.addDebt(debt);
         return "redirect:/debts";
     }
 
     // Borçları listeleme
     @GetMapping
-    public String getAllDebts(Model model) {
+    public String getAllDebts(
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false, defaultValue = "desc") String direction,
+            Model model) {
         // Önce istatistikleri al
         Map<String, Object> stats = debtService.getDebtStatistics();
         if (stats == null) {
@@ -143,10 +183,63 @@ public class DebtController {
             stats.put("upcomingDebts", new ArrayList<>());
         }
 
-        model.addAttribute("debts", debtService.getAllDebts());
+        List<Debt> debts;
+        if (sortBy != null && !sortBy.isEmpty()) {
+            debts = debtService.getAllDebtsSorted(sortBy, direction);
+        } else {
+            debts = debtService.getAllDebts();
+        }
+
+        model.addAttribute("debts", debts);
         model.addAttribute("customers", customerService.getAllCustomers());
         model.addAttribute("products", productService.findAll());
         model.addAttribute("stats", stats);
+        model.addAttribute("sortBy", sortBy);
+        model.addAttribute("direction", direction);
+        return "debts";
+    }
+
+    // Borç Filtreleme
+    @GetMapping("/filter")
+    public String filterDebts(
+            @RequestParam(required = false) Long customerId,
+            @RequestParam(required = false) String direction,
+            @RequestParam(required = false) String debtType,
+            @RequestParam(required = false) Boolean paid,
+            @RequestParam(required = false) String dateRange,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false, defaultValue = "dueDate") String sortBy,
+            @RequestParam(required = false, defaultValue = "desc") String sortDirection,
+            Model model) {
+        
+        // İstatistikleri al
+        Map<String, Object> stats = debtService.getDebtStatistics();
+        
+        // Filtreleme servis metodunu çağır
+        List<Debt> filteredDebts = debtService.filterDebts(
+            customerId, direction, debtType, paid, 
+            dateRange, startDate, endDate, 
+            sortBy, sortDirection
+        );
+        
+        // Model'e verileri ekle
+        model.addAttribute("debts", filteredDebts);
+        model.addAttribute("customers", customerService.getAllCustomers());
+        model.addAttribute("products", productService.findAll());
+        model.addAttribute("stats", stats);
+        
+        // Filtreleme parametrelerini geri gönder
+        model.addAttribute("customerId", customerId);
+        model.addAttribute("direction", direction);
+        model.addAttribute("debtType", debtType);
+        model.addAttribute("paid", paid);
+        model.addAttribute("dateRange", dateRange);
+        model.addAttribute("startDate", startDate);
+        model.addAttribute("endDate", endDate);
+        model.addAttribute("sortBy", sortBy);
+        model.addAttribute("sortDirection", sortDirection);
+        
         return "debts";
     }
 
@@ -316,7 +409,6 @@ public class DebtController {
         debt.setCustomer(customerService.findCustomerById(customerId));
         debt.setDirection(direction);
         debt.setAmount(amount);
-        debt.setProduct(productId != null ? productService.findById(productId) : null);
         debt.setDueDate(LocalDateTime.parse(dueDate));
         debt.setDebtType(debtType);
 

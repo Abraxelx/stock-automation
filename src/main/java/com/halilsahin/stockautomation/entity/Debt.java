@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.math.BigDecimal;
 
 @Entity
 @Getter
@@ -47,9 +48,8 @@ public class Debt {
     @JoinColumn(name = "customer_id")
     private Customer customer;    // İşlem yapılan müşteri
 
-    @ManyToOne
-    @JoinColumn(name = "product_id", nullable = true)
-    private Product product;  // Ürün bilgisi (varsa)
+    @OneToMany(mappedBy = "debt", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<DebtProduct> products = new ArrayList<>();
 
     @OneToMany(mappedBy = "debt", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Document> documents = new ArrayList<>();
@@ -74,5 +74,18 @@ public class Debt {
     @Override
     public final int hashCode() {
         return this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass().hashCode() : getClass().hashCode();
+    }
+
+    public void addProduct(Product product, int quantity, BigDecimal unitPrice) {
+        DebtProduct debtProduct = new DebtProduct();
+        debtProduct.setDebt(this);
+        debtProduct.setProduct(product);
+        debtProduct.setQuantity(quantity);
+        debtProduct.setUnitPrice(unitPrice);
+        debtProduct.setSubtotal(unitPrice.multiply(BigDecimal.valueOf(quantity)));
+        products.add(debtProduct);
+        
+        // Toplam tutarı güncelle
+        this.amount += debtProduct.getSubtotal().doubleValue();
     }
 }
