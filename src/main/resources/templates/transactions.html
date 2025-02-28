@@ -23,54 +23,372 @@
       font-size: 0.9em;
       border-radius: 6px;
     }
+    .dashboard-card {
+      border-radius: 10px;
+      padding: 20px;
+      height: 100%;
+      transition: transform 0.3s;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .dashboard-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    }
+    .card-icon {
+      font-size: 2.5rem;
+      margin-bottom: 15px;
+      color: white;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    }
+    .card-title {
+      font-size: 1.1rem;
+      margin-bottom: 10px;
+      font-weight: 600;
+      color: white;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    }
+    .card-value {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: white;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    }
+    .dashboard-card.bg-primary {
+      background-color: #0d6efd;
+    }
+    .dashboard-card.bg-success {
+      background-color: #198754;
+    }
+    .dashboard-card.bg-info {
+      background-color: #0dcaf0;
+    }
+    .dashboard-card.bg-warning {
+      background-color: #ffc107;
+      color: white;
+    }
+    .recent-transactions-list {
+      max-height: 350px;
+      overflow-y: auto;
+    }
+    .recent-transaction-item {
+      padding: 10px 15px;
+      border-bottom: 1px solid #eee;
+      transition: background-color 0.2s;
+    }
+    .recent-transaction-item:hover {
+      background-color: #f8f9fa;
+    }
+    .active-filters .badge {
+      font-size: 0.85rem;
+      padding: 8px 12px;
+    }
+    .table th a {
+      display: block;
+      text-decoration: none !important;
+    }
+    .table th a:hover {
+      text-decoration: underline !important;
+    }
+    .btn-detail-toggle {
+      padding: 0.1rem 0.35rem;
+    }
+    .btn-detail-toggle:hover {
+      background-color: #f0f0f0;
+      border-radius: 4px;
+    }
   </style>
 </head>
 <body class="bg-light">
 <div th:insert="~{fragments/navbar.html :: navbar}"></div>
 
 <div class="container mt-5">
+  <div class="row mb-4">
+    <div class="col-12">
+      <h2 class="mb-4">
+        <i class="fas fa-chart-line"></i> İşlem Özeti
+      </h2>
+    </div>
+  </div>
+
+  <!-- Dashboard Kartları -->
+  <div class="row mb-5">
+    <!-- Toplam İşlem Sayısı -->
+    <div class="col-lg-3 col-md-6 mb-4">
+      <div class="dashboard-card bg-primary">
+        <div class="card-icon">
+          <i class="fas fa-clipboard-list"></i>
+        </div>
+        <div class="card-title">TOPLAM İŞLEMLER</div>
+        <div class="card-value" th:text="${totalTransactions}">0</div>
+      </div>
+    </div>
+    
+    <!-- Günlük İşlem Sayısı -->
+    <div class="col-lg-3 col-md-6 mb-4">
+      <div class="dashboard-card bg-success">
+        <div class="card-icon">
+          <i class="fas fa-calendar-day"></i>
+        </div>
+        <div class="card-title">BUGÜNKÜ İŞLEMLER</div>
+        <div class="card-value" th:text="${todayTransactions}">0</div>
+      </div>
+    </div>
+    
+    <!-- Haftalık İşlem Sayısı -->
+    <div class="col-lg-3 col-md-6 mb-4">
+      <div class="dashboard-card bg-info">
+        <div class="card-icon">
+          <i class="fas fa-calendar-week"></i>
+        </div>
+        <div class="card-title">HAFTALIK İŞLEMLER</div>
+        <div class="card-value" th:text="${weeklyTransactions}">0</div>
+      </div>
+    </div>
+    
+    <!-- Günlük Toplam Tutar -->
+    <div class="col-lg-3 col-md-6 mb-4">
+      <div class="dashboard-card bg-warning">
+        <div class="card-icon">
+          <i class="fas fa-money-bill-wave"></i>
+        </div>
+        <div class="card-title">GÜNLÜK TOPLAM</div>
+        <div class="card-value">
+          <span th:text="${#numbers.formatDecimal(dailyTotal, 0, 'COMMA', 2, 'POINT')} + ' TL'">0.00 TL</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Son İşlemler ve Yüksek Tutarlı İşlemler -->
+  <div class="row mb-5">
+    <!-- Son İşlemler -->
+    <div class="col-lg-6 mb-4">
+      <div class="transaction-card">
+        <h4 class="mb-4"><i class="fas fa-history"></i> Son İşlemler</h4>
+        <div class="recent-transactions-list">
+          <div class="recent-transaction-item" th:each="transaction : ${recentTransactions}">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <span th:switch="${transaction.type.toString()}">
+                  <span th:case="SALE" class="badge badge-custom bg-danger">
+                    <i class="fas fa-shopping-cart"></i> SATIŞ
+                  </span>
+                  <span th:case="STOCK_IN" class="badge badge-custom bg-success">
+                    <i class="fas fa-plus-circle"></i> STOK GİRİŞİ
+                  </span>
+                  <span th:case="STOCK_OUT" class="badge badge-custom bg-warning">
+                    <i class="fas fa-minus-circle"></i> STOK ÇIKIŞI
+                  </span>
+                  <span th:case="DEBT_IN" class="badge badge-custom bg-danger">
+                    <i class="fas fa-arrow-down"></i> BORÇ ALMA
+                  </span>
+                  <span th:case="DEBT_OUT" class="badge badge-custom bg-success">
+                    <i class="fas fa-arrow-up"></i> BORÇ VERME
+                  </span>
+                  <span th:case="DEBT_PAYMENT" class="badge badge-custom bg-danger">
+                    <i class="fas fa-money-bill-wave"></i> BORÇ ÖDEMESİ
+                  </span>
+                  <span th:case="DEBT_COLLECTION" class="badge badge-custom bg-success">
+                    <i class="fas fa-hand-holding-usd"></i> ALACAK TAHSİLATI
+                  </span>
+                  <span th:case="CUSTOMER_ADD" class="badge badge-custom bg-info">
+                    <i class="fas fa-user-plus"></i> MÜŞTERİ KAYDI
+                  </span>
+                </span>
+                <span class="ms-2" th:text="${transaction.description}">İşlem açıklaması</span>
+              </div>
+              <div class="text-end">
+                <div>
+                  <i class="fas fa-lira-sign"></i>
+                  <span th:text="${#numbers.formatDecimal(transaction.amount, 0, 'COMMA', 2, 'POINT')} + ' TL'"></span>
+                </div>
+                <small class="text-muted" th:text="${#temporals.format(transaction.date, 'dd MMMM HH:mm')}"></small>
+              </div>
+            </div>
+            <a th:href="@{/transactions/detail/{id}(id=${transaction.id})}" class="btn btn-sm btn-outline-primary mt-2">
+              <i class="fas fa-eye"></i> Detay
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Yüksek Tutarlı İşlemler -->
+    <div class="col-lg-6 mb-4">
+      <div class="transaction-card">
+        <h4 class="mb-4"><i class="fas fa-chart-line"></i> En Yüksek Tutarlı İşlemler</h4>
+        <div class="recent-transactions-list">
+          <div class="recent-transaction-item" th:each="transaction : ${highestAmountTransactions}">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <span th:switch="${transaction.type.toString()}">
+                  <span th:case="SALE" class="badge badge-custom bg-danger">
+                    <i class="fas fa-shopping-cart"></i> SATIŞ
+                  </span>
+                  <span th:case="STOCK_IN" class="badge badge-custom bg-success">
+                    <i class="fas fa-plus-circle"></i> STOK GİRİŞİ
+                  </span>
+                  <span th:case="STOCK_OUT" class="badge badge-custom bg-warning">
+                    <i class="fas fa-minus-circle"></i> STOK ÇIKIŞI
+                  </span>
+                  <span th:case="DEBT_IN" class="badge badge-custom bg-danger">
+                    <i class="fas fa-arrow-down"></i> BORÇ ALMA
+                  </span>
+                  <span th:case="DEBT_OUT" class="badge badge-custom bg-success">
+                    <i class="fas fa-arrow-up"></i> BORÇ VERME
+                  </span>
+                  <span th:case="DEBT_PAYMENT" class="badge badge-custom bg-danger">
+                    <i class="fas fa-money-bill-wave"></i> BORÇ ÖDEMESİ
+                  </span>
+                  <span th:case="DEBT_COLLECTION" class="badge badge-custom bg-success">
+                    <i class="fas fa-hand-holding-usd"></i> ALACAK TAHSİLATI
+                  </span>
+                  <span th:case="CUSTOMER_ADD" class="badge badge-custom bg-info">
+                    <i class="fas fa-user-plus"></i> MÜŞTERİ KAYDI
+                  </span>
+                </span>
+                <span class="ms-2" th:text="${transaction.description}">İşlem açıklaması</span>
+              </div>
+              <div class="text-end">
+                <div>
+                  <i class="fas fa-lira-sign"></i>
+                  <strong th:text="${#numbers.formatDecimal(transaction.amount, 0, 'COMMA', 2, 'POINT')} + ' TL'"></strong>
+                </div>
+                <small class="text-muted" th:text="${#temporals.format(transaction.date, 'dd MMMM HH:mm')}"></small>
+              </div>
+            </div>
+            <a th:href="@{/transactions/detail/{id}(id=${transaction.id})}" class="btn btn-sm btn-outline-primary mt-2">
+              <i class="fas fa-eye"></i> Detay
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="transaction-card">
     <h2 class="mb-4">
       <i class="fas fa-history"></i> İşlem Kaydı
+      <!-- Export butonlarını ekliyorum -->
+      <div class="float-end">
+        <a th:href="@{/transactions/export/pdf(type=${type},startDate=${startDate},endDate=${endDate},minAmount=${minAmount},maxAmount=${maxAmount})}" 
+           class="btn btn-danger btn-sm ms-2" target="_blank">
+          <i class="fas fa-file-pdf"></i> PDF İndir
+        </a>
+        <a th:href="@{/transactions/export/excel(type=${type},startDate=${startDate},endDate=${endDate},minAmount=${minAmount},maxAmount=${maxAmount})}" 
+           class="btn btn-success btn-sm ms-2">
+          <i class="fas fa-file-excel"></i> Excel İndir
+        </a>
+      </div>
     </h2>
 
     <!-- Filtreleme Bölümü -->
     <div class="filter-section mb-4">
-      <form th:action="@{/transactions}" method="get" class="row g-3">
-        <input type="hidden" name="page" value="0">
-        <input type="hidden" name="sortBy" th:value="${sortBy}">
-        <input type="hidden" name="direction" th:value="${direction}">
-        <div class="col-md-4">
-          <label class="form-label">İşlem Tipi</label>
-          <select name="type" class="form-select" th:value="${type}">
-            <option value="">Tümü</option>
-            <option value="SALE">SATIŞ</option>
-            <option value="STOCK_IN">STOK GİRİŞİ</option>
-            <option value="STOCK_OUT">STOK ÇIKIŞI</option>
-            <option value="DEBT_IN">BORÇ ALMA</option>
-            <option value="DEBT_OUT">BORÇ VERME</option>
-            <option value="DEBT_PAYMENT">BORÇ ÖDEMESİ</option>
-            <option value="DEBT_COLLECTION">ALACAK TAHSİLATI</option>
-            <option value="CUSTOMER_ADD">MÜŞTERİ KAYDI</option>
-          </select>
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0"><i class="fas fa-filter"></i> Filtreleme Seçenekleri</h5>
+        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#filterCollapse">
+          <i class="fas fa-sliders-h"></i> Filtreleri Göster/Gizle
+        </button>
+      </div>
+      
+      <div class="collapse show" id="filterCollapse">
+        <form id="transactionFilterForm" th:action="@{/transactions}" method="get" class="row g-3">
+          <input type="hidden" name="page" value="0">
+          <input type="hidden" name="sortBy" th:value="${sortBy}">
+          <input type="hidden" name="direction" th:value="${direction}">
+          
+          <div class="col-md-4">
+            <label class="form-label">İşlem Tipi</label>
+            <select name="type" class="form-select" th:value="${type}">
+              <option value="">Tümü</option>
+              <option value="SALE" th:selected="${type == 'SALE'}">SATIŞ</option>
+              <option value="STOCK_IN" th:selected="${type == 'STOCK_IN'}">STOK GİRİŞİ</option>
+              <option value="STOCK_OUT" th:selected="${type == 'STOCK_OUT'}">STOK ÇIKIŞI</option>
+              <option value="DEBT_IN" th:selected="${type == 'DEBT_IN'}">BORÇ ALMA</option>
+              <option value="DEBT_OUT" th:selected="${type == 'DEBT_OUT'}">BORÇ VERME</option>
+              <option value="DEBT_PAYMENT" th:selected="${type == 'DEBT_PAYMENT'}">BORÇ ÖDEMESİ</option>
+              <option value="DEBT_COLLECTION" th:selected="${type == 'DEBT_COLLECTION'}">ALACAK TAHSİLATI</option>
+              <option value="CUSTOMER_ADD" th:selected="${type == 'CUSTOMER_ADD'}">MÜŞTERİ KAYDI</option>
+            </select>
+          </div>
+          
+          <div class="col-md-4">
+            <label class="form-label">Başlangıç Tarihi</label>
+            <input type="date" name="startDate" class="form-control" th:value="${startDate}">
+          </div>
+          
+          <div class="col-md-4">
+            <label class="form-label">Bitiş Tarihi</label>
+            <input type="date" name="endDate" class="form-control" th:value="${endDate}">
+          </div>
+          
+          <div class="col-md-6">
+            <label class="form-label">Tutar Aralığı</label>
+            <div class="input-group">
+              <span class="input-group-text">Min</span>
+              <input type="number" name="minAmount" class="form-control" placeholder="Min Tutar" 
+                     step="0.01" min="0" th:value="${minAmount}">
+              <span class="input-group-text">Max</span>
+              <input type="number" name="maxAmount" class="form-control" placeholder="Max Tutar" 
+                     step="0.01" min="0" th:value="${maxAmount}">
+              <span class="input-group-text">TL</span>
+            </div>
+          </div>
+          
+          <div class="col-md-6">
+            <label class="form-label">Sıralama</label>
+            <div class="input-group">
+              <select name="sortBy" class="form-select">
+                <option value="date" th:selected="${sortBy == 'date'}">Tarih</option>
+                <option value="amount" th:selected="${sortBy == 'amount'}">Tutar</option>
+                <option value="id" th:selected="${sortBy == 'id'}">ID</option>
+                <option value="type" th:selected="${sortBy == 'type'}">İşlem Tipi</option>
+              </select>
+              <select name="direction" class="form-select">
+                <option value="desc" th:selected="${direction == 'desc'}">Azalan</option>
+                <option value="asc" th:selected="${direction == 'asc'}">Artan</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="col-12 mt-3">
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-filter"></i> Filtrele
+            </button>
+            <a href="/transactions" class="btn btn-secondary">
+              <i class="fas fa-sync"></i> Sıfırla
+            </a>
+          </div>
+        </form>
+      </div>
+      
+      <!-- Aktif Filtreler -->
+      <div class="active-filters mt-3" th:if="${type != null || startDate != null || endDate != null || minAmount != null || maxAmount != null}">
+        <h6 class="text-muted mb-2">Aktif Filtreler:</h6>
+        <div class="d-flex flex-wrap gap-2">
+          <span class="badge bg-info" th:if="${type != null}">
+            İşlem Tipi: <span th:text="${type}"></span>
+            <a th:href="@{/transactions(startDate=${startDate},endDate=${endDate},minAmount=${minAmount},maxAmount=${maxAmount},sortBy=${sortBy},direction=${direction})}" class="text-white ms-1"><i class="fas fa-times-circle"></i></a>
+          </span>
+          
+          <span class="badge bg-info" th:if="${startDate != null && endDate != null}">
+            Tarih: <span th:text="${startDate}"></span> - <span th:text="${endDate}"></span>
+            <a th:href="@{/transactions(type=${type},minAmount=${minAmount},maxAmount=${maxAmount},sortBy=${sortBy},direction=${direction})}" class="text-white ms-1"><i class="fas fa-times-circle"></i></a>
+          </span>
+          
+          <span class="badge bg-info" th:if="${minAmount != null || maxAmount != null}">
+            Tutar: 
+            <span th:if="${minAmount != null}" th:text="${minAmount}"></span>
+            <span th:if="${minAmount != null && maxAmount != null}"> - </span>
+            <span th:if="${maxAmount != null}" th:text="${maxAmount}"></span> TL
+            <a th:href="@{/transactions(type=${type},startDate=${startDate},endDate=${endDate},sortBy=${sortBy},direction=${direction})}" class="text-white ms-1"><i class="fas fa-times-circle"></i></a>
+          </span>
+          
+          <span class="badge bg-info">
+            Sıralama: <span th:text="${sortBy}"></span> (<span th:text="${direction == 'desc' ? 'Azalan' : 'Artan'}"></span>)
+          </span>
         </div>
-        <div class="col-md-4">
-          <label class="form-label">Başlangıç Tarihi</label>
-          <input type="date" name="startDate" class="form-control" th:value="${startDate}">
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Bitiş Tarihi</label>
-          <input type="date" name="endDate" class="form-control" th:value="${endDate}">
-        </div>
-        <div class="col-12">
-          <button type="submit" class="btn btn-primary">
-            <i class="fas fa-filter"></i> Filtrele
-          </button>
-          <a href="/transactions" class="btn btn-secondary">
-            <i class="fas fa-sync"></i> Sıfırla
-          </a>
-        </div>
-      </form>
+      </div>
     </div>
 
     <div class="table-responsive">
@@ -78,15 +396,30 @@
         <thead class="table-dark">
           <tr>
             <th>#</th>
-            <th>İŞLEM TİPİ</th>
+            <th>
+              <a th:href="@{/transactions(page=${currentPage},type=${type},startDate=${startDate},endDate=${endDate},minAmount=${minAmount},maxAmount=${maxAmount},sortBy=type,direction=${direction == 'asc' ? 'desc' : 'asc'})}" class="text-white text-decoration-none">
+                İŞLEM TİPİ
+                <i class="fas" th:classappend="${sortBy == 'type' ? (direction == 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'}"></i>
+              </a>
+            </th>
             <th>AÇIKLAMA</th>
-            <th>TUTAR</th>
-            <th>TARİH</th>
+            <th>
+              <a th:href="@{/transactions(page=${currentPage},type=${type},startDate=${startDate},endDate=${endDate},minAmount=${minAmount},maxAmount=${maxAmount},sortBy=amount,direction=${direction == 'asc' ? 'desc' : 'asc'})}" class="text-white text-decoration-none">
+                TUTAR
+                <i class="fas" th:classappend="${sortBy == 'amount' ? (direction == 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'}"></i>
+              </a>
+            </th>
+            <th>
+              <a th:href="@{/transactions(page=${currentPage},type=${type},startDate=${startDate},endDate=${endDate},minAmount=${minAmount},maxAmount=${maxAmount},sortBy=date,direction=${direction == 'asc' ? 'desc' : 'asc'})}" class="text-white text-decoration-none">
+                TARİH
+                <i class="fas" th:classappend="${sortBy == 'date' ? (direction == 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'}"></i>
+              </a>
+            </th>
             <th>DETAY</th>
           </tr>
         </thead>
         <tbody>
-          <tr th:each="transaction, iterStat : ${transactions}">
+          <tr th:each="transaction, iterStat : ${transactions}" th:id="'transaction-' + ${transaction.id}">
             <td th:text="${iterStat.count}"></td>
             <td>
               <!-- İşlem tipine göre badge'ler -->
@@ -117,9 +450,18 @@
                 </span>
               </span>
             </td>
-            <td th:text="${transaction.description}"></td>
             <td>
-              <i class="fas fa-lira-sign"></i>
+              <!-- Kısa açıklama ve genişletme butonu -->
+              <div class="d-flex align-items-center">
+                <span th:text="${#strings.abbreviate(transaction.description, 50)}"></span>
+                <button class="btn btn-sm text-primary ms-2 btn-detail-toggle" 
+                        type="button" 
+                        title="Detayları Göster/Gizle">
+                  <i class="fas fa-chevron-down"></i>
+                </button>
+              </div>
+            </td>
+            <td>
               <span th:text="${#numbers.formatDecimal(transaction.amount, 0, 'COMMA', 2, 'POINT')} + ' TL'"></span>
             </td>
             <td th:text="${#temporals.format(transaction.date, 'dd MMMM yyyy EEEE - HH:mm ')}"></td>
@@ -150,6 +492,45 @@
               </span>
             </td>
           </tr>
+          <!-- Genişletilebilir detay satırı -->
+          <tr th:id="'detail-' + ${transaction.id}" class="d-none" th:each="transaction : ${transactions}">
+            <td colspan="6" class="bg-light">
+              <div class="p-3">
+                <div class="mb-3">
+                  <h6 class="text-primary">Tam Açıklama:</h6>
+                  <p th:text="${transaction.description}"></p>
+                </div>
+                <div class="row">
+                  <div class="col-md-6">
+                    <h6 class="text-primary">İşlem Bilgileri:</h6>
+                    <ul class="list-unstyled">
+                      <li><strong>İşlem ID:</strong> <span th:text="${transaction.id}"></span></li>
+                      <li><strong>İşlem Tipi:</strong> <span th:text="${transaction.type}"></span></li>
+                      <li><strong>Tarih:</strong> <span th:text="${#temporals.format(transaction.date, 'dd MMMM yyyy EEEE - HH:mm')}"></span></li>
+                      <li><strong>Tutar:</strong> <span th:text="${#numbers.formatDecimal(transaction.amount, 0, 'COMMA', 2, 'POINT')} + ' TL'"></span></li>
+                    </ul>
+                  </div>
+                  <div class="col-md-6">
+                    <div th:if="${transaction.product != null}">
+                      <h6 class="text-primary">Ürün Bilgileri:</h6>
+                      <ul class="list-unstyled">
+                        <li><strong>Ürün Adı:</strong> <span th:text="${transaction.product.name}"></span></li>
+                        <li><strong>Barkod:</strong> <span th:text="${transaction.product.barcode}"></span></li>
+                        <li><strong>Birim Fiyat:</strong> <span th:text="${#numbers.formatDecimal(transaction.product.price, 0, 'COMMA', 2, 'POINT')} + ' TL'"></span></li>
+                      </ul>
+                    </div>
+                    <div th:if="${transaction.customer != null}">
+                      <h6 class="text-primary">Müşteri Bilgileri:</h6>
+                      <ul class="list-unstyled">
+                        <li><strong>Müşteri:</strong> <span th:text="${transaction.customer.firstName + ' ' + transaction.customer.lastName}"></span></li>
+                        <li><strong>Telefon:</strong> <span th:text="${transaction.customer.phoneNumber}"></span></li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
         </tbody>
       </table>
 
@@ -164,14 +545,14 @@
           <ul class="pagination mb-0">
             <!-- İlk Sayfa -->
             <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
-              <a class="page-link" th:href="@{/transactions(page=0,sortBy=${sortBy},direction=${direction})}">
+              <a class="page-link" th:href="@{/transactions(page=0,sortBy=${sortBy},direction=${direction},type=${type},startDate=${startDate},endDate=${endDate},minAmount=${minAmount},maxAmount=${maxAmount})}">
                 <i class="fas fa-angle-double-left"></i>
               </a>
             </li>
 
             <!-- Önceki Sayfa -->
             <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
-              <a class="page-link" th:href="@{/transactions(page=${currentPage - 1},sortBy=${sortBy},direction=${direction})}">
+              <a class="page-link" th:href="@{/transactions(page=${currentPage - 1},sortBy=${sortBy},direction=${direction},type=${type},startDate=${startDate},endDate=${endDate},minAmount=${minAmount},maxAmount=${maxAmount})}">
                 <i class="fas fa-angle-left"></i>
               </a>
             </li>
@@ -179,20 +560,21 @@
             <!-- Sayfa Numaraları -->
             <li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
                 th:classappend="${currentPage == i} ? 'active'">
-              <a class="page-link" th:href="@{/transactions(page=${i},sortBy=${sortBy},direction=${direction})}"
-                 th:text="${i + 1}"></a>
+              <a class="page-link" th:href="@{/transactions(page=${i},sortBy=${sortBy},direction=${direction},type=${type},startDate=${startDate},endDate=${endDate},minAmount=${minAmount},maxAmount=${maxAmount})}">
+                <span th:text="${i + 1}"></span>
+              </a>
             </li>
 
             <!-- Sonraki Sayfa -->
             <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
-              <a class="page-link" th:href="@{/transactions(page=${currentPage + 1},sortBy=${sortBy},direction=${direction})}">
+              <a class="page-link" th:href="@{/transactions(page=${currentPage + 1},sortBy=${sortBy},direction=${direction},type=${type},startDate=${startDate},endDate=${endDate},minAmount=${minAmount},maxAmount=${maxAmount})}">
                 <i class="fas fa-angle-right"></i>
               </a>
             </li>
 
             <!-- Son Sayfa -->
             <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
-              <a class="page-link" th:href="@{/transactions(page=${totalPages - 1},sortBy=${sortBy},direction=${direction})}">
+              <a class="page-link" th:href="@{/transactions(page=${totalPages - 1},sortBy=${sortBy},direction=${direction},type=${type},startDate=${startDate},endDate=${endDate},minAmount=${minAmount},maxAmount=${maxAmount})}">
                 <i class="fas fa-angle-double-right"></i>
               </a>
             </li>
@@ -204,5 +586,105 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  // Sayfa pozisyonunu kaydet ve geri yükle
+  document.addEventListener('DOMContentLoaded', function() {
+    // Sayfa yüklendiğinde, önceki scroll pozisyonuna git (varsa)
+    if (sessionStorage.getItem('scrollPosition')) {
+      window.scrollTo(0, parseInt(sessionStorage.getItem('scrollPosition')));
+      // Kullanıldıktan sonra pozisyonu temizle
+      sessionStorage.removeItem('scrollPosition');
+    }
+    
+    // Form gönderiminde scroll pozisyonunu kaydet
+    const filterForm = document.querySelector('#transactionFilterForm');
+    if (filterForm) {
+      filterForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Şu anki scroll pozisyonunu kaydet
+        sessionStorage.setItem('scrollPosition', window.scrollY);
+        
+        // Tüm form elemanlarını kontrol et ve boş olanları kaldır
+        const formData = new FormData(filterForm);
+        const params = new URLSearchParams();
+        
+        // Her form elemanını için kontrol
+        for (const [key, value] of formData.entries()) {
+          // Boş olmayan değerleri ekle (tekrar eklemeyi önler)
+          if (value.trim() !== "" && !params.has(key)) {
+            params.append(key, value);
+          }
+        }
+        
+        // Yeni URL'i oluştur ve yönlendir
+        window.location.href = filterForm.action + '?' + params.toString();
+      });
+    }
+    
+    // Pagination linklerine tıklandığında da pozisyonu kaydet
+    const paginationLinks = document.querySelectorAll('.pagination .page-link');
+    paginationLinks.forEach(link => {
+      link.addEventListener('click', function(e) {
+        // Sayfa pozisyonunu kaydet
+        sessionStorage.setItem('scrollPosition', window.scrollY);
+      });
+    });
+    
+    // Sıralama linklerini düzelt ve pozisyonu kaydet
+    const sortLinks = document.querySelectorAll('th a[href*="sortBy"]');
+    sortLinks.forEach(link => {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Sayfa pozisyonunu kaydet
+        sessionStorage.setItem('scrollPosition', window.scrollY);
+        
+        // Mevcut URL parametrelerini al
+        const url = new URL(window.location.href);
+        const params = url.searchParams;
+        
+        // Sort parametrelerini güncelle
+        const newUrl = new URL(this.href);
+        params.set('sortBy', newUrl.searchParams.get('sortBy'));
+        params.set('direction', newUrl.searchParams.get('direction'));
+        
+        // Yeni URL'ye yönlendir
+        window.location.href = url.toString();
+      });
+    });
+    
+    // Aktif filtre kaldırma linklerine tıklandığında da pozisyonu kaydet
+    const filterRemoveLinks = document.querySelectorAll('.active-filters a');
+    filterRemoveLinks.forEach(link => {
+      link.addEventListener('click', function() {
+        sessionStorage.setItem('scrollPosition', window.scrollY);
+      });
+    });
+    
+    // Tablodaki detay için satırları genişletme/daraltma
+    const detailBtns = document.querySelectorAll('.btn-detail-toggle');
+    detailBtns.forEach(btn => {
+      btn.addEventListener('click', function() {
+        const row = this.closest('tr');
+        const transactionId = row.id.replace('transaction-', '');
+        const detailRow = document.getElementById('detail-' + transactionId);
+        
+        if (detailRow) {
+          detailRow.classList.toggle('d-none');
+          
+          // Icon değiştirme
+          const icon = this.querySelector('i');
+          if (icon.classList.contains('fa-chevron-down')) {
+            icon.classList.replace('fa-chevron-down', 'fa-chevron-up');
+          } else {
+            icon.classList.replace('fa-chevron-up', 'fa-chevron-down');
+          }
+        }
+      });
+    });
+  });
+</script>
 </body>
 </html>

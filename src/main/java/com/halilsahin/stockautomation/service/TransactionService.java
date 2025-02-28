@@ -1,7 +1,5 @@
 package com.halilsahin.stockautomation.service;
 
-import com.halilsahin.stockautomation.entity.Customer;
-import com.halilsahin.stockautomation.entity.Product;
 import com.halilsahin.stockautomation.entity.Transaction;
 import com.halilsahin.stockautomation.entity.Sale;
 import com.halilsahin.stockautomation.entity.SaleItem;
@@ -10,19 +8,15 @@ import com.halilsahin.stockautomation.repository.TransactionRepository;
 import com.halilsahin.stockautomation.transaction.TransactionHandler;
 import com.halilsahin.stockautomation.transaction.TransactionHandlerFactory;
 import com.halilsahin.stockautomation.transaction.TransactionContext;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.persistence.criteria.Predicate;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,102 +25,26 @@ public class TransactionService {
 
     private final TransactionRepository transactionRepository;
     private final TransactionHandlerFactory handlerFactory;
-    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-    @Autowired
     public TransactionService(TransactionRepository transactionRepository, TransactionHandlerFactory handlerFactory) {
         this.transactionRepository = transactionRepository;
         this.handlerFactory = handlerFactory;
     }
 
     public Page<Transaction> findTransactions(String type, String startDate, String endDate, Pageable pageable) {
-        Specification<Transaction> spec = createSpecification(type, startDate, endDate, null, null, null, null);
-        return transactionRepository.findAll(spec, pageable);
-    }
-
-    public Page<Transaction> findTransactionsAdvanced(
-            String type, 
-            String startDate, 
-            String endDate, 
-            Long customerId, 
-            Long productId, 
-            BigDecimal minAmount, 
-            BigDecimal maxAmount, 
-            Pageable pageable) {
-        
-        Specification<Transaction> spec = createSpecification(
-            type, startDate, endDate, customerId, productId, minAmount, maxAmount);
-        
-        return transactionRepository.findAll(spec, pageable);
-    }
-
-    public List<Transaction> findTransactionsForExport(
-            String type, 
-            String startDate, 
-            String endDate, 
-            Long customerId, 
-            Long productId) {
-        
-        Specification<Transaction> spec = createSpecification(
-            type, startDate, endDate, customerId, productId, null, null);
-        
-        return transactionRepository.findAll(spec);
-    }
-
-    private Specification<Transaction> createSpecification(
-            String type, 
-            String startDate, 
-            String endDate, 
-            Long customerId, 
-            Long productId, 
-            BigDecimal minAmount, 
-            BigDecimal maxAmount) {
-        
-        return (root, query, criteriaBuilder) -> {
-            List<Predicate> predicates = new ArrayList<>();
-
-            // İşlem türü filtresi
+        if (type != null && !type.isEmpty() || startDate != null && !startDate.isEmpty() || endDate != null && !endDate.isEmpty()) {
+            LocalDateTime start = startDate != null && !startDate.isEmpty() ? 
+                LocalDate.parse(startDate).atStartOfDay() : LocalDate.of(2000, 1, 1).atStartOfDay();
+            LocalDateTime end = endDate != null && !endDate.isEmpty() ? 
+                LocalDate.parse(endDate).atTime(23, 59, 59) : LocalDateTime.now().plusYears(10);
+            
             if (type != null && !type.isEmpty()) {
-                try {
-                    TransactionType transactionType = TransactionType.valueOf(type);
-                    predicates.add(criteriaBuilder.equal(root.get("type"), transactionType));
-                } catch (IllegalArgumentException e) {
-                    // Geçersiz tür, filtre uygulanmaz
-                }
+                return transactionRepository.findByTypeAndDateBetween(
+                    TransactionType.valueOf(type), start, end, pageable);
             }
-
-            // Tarih aralığı filtresi
-            if (startDate != null && !startDate.isEmpty()) {
-                LocalDateTime startDateTime = LocalDate.parse(startDate, formatter).atStartOfDay();
-                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("date"), startDateTime));
-            }
-
-            if (endDate != null && !endDate.isEmpty()) {
-                LocalDateTime endDateTime = LocalDate.parse(endDate, formatter).plusDays(1).atStartOfDay();
-                predicates.add(criteriaBuilder.lessThan(root.get("date"), endDateTime));
-            }
-
-            // Müşteri filtresi
-            if (customerId != null) {
-                predicates.add(criteriaBuilder.equal(root.get("customer").get("id"), customerId));
-            }
-
-            // Ürün filtresi
-            if (productId != null) {
-                predicates.add(criteriaBuilder.equal(root.get("product").get("id"), productId));
-            }
-
-            // Tutar aralığı filtresi
-            if (minAmount != null) {
-                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("amount"), minAmount));
-            }
-
-            if (maxAmount != null) {
-                predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("amount"), maxAmount));
-            }
-
-            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
-        };
+            return transactionRepository.findByDateBetween(start, end, pageable);
+        }
+        return transactionRepository.findAll(pageable);
     }
 
     public void createSaleTransaction(Sale sale, List<SaleItem> saleItems) {
@@ -168,94 +86,92 @@ public class TransactionService {
     }
 
     public Transaction findById(Long id) {
-        return transactionRepository.findById(id).orElse(null);
+        return transactionRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("İşlem bulunamadı: " + id));
     }
 
-    // Dashboard için gerekli metotlar
-    
+    /**
+     * Toplam işlem sayısını döndürür
+     */
     public long countAllTransactions() {
         return transactionRepository.count();
     }
     
+    /**
+     * Belirli tarih aralığındaki işlem sayısını döndürür
+     */
     public long countTransactionsByDateRange(LocalDateTime start, LocalDateTime end) {
-        Specification<Transaction> spec = (root, query, criteriaBuilder) -> {
-            List<Predicate> predicates = new ArrayList<>();
-            predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("date"), start));
-            predicates.add(criteriaBuilder.lessThan(root.get("date"), end));
-            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
-        };
-        
-        return transactionRepository.count(spec);
+        return transactionRepository.findAll().stream()
+            .filter(t -> t.getDate().isAfter(start) && t.getDate().isBefore(end))
+            .count();
     }
     
+    /**
+     * En son yapılan işlemleri döndürür
+     */
     public List<Transaction> findRecentTransactions(int limit) {
-        return transactionRepository.findTop5ByOrderByDateDesc();
-    }
-    
-    public List<Transaction> findHighestAmountTransactions(int limit) {
-        return transactionRepository.findTop5ByOrderByAmountDesc();
-    }
-    
-    // Grafikler için gerekli metotlar
-    
-    public Map<TransactionType, Long> getTransactionCountByType() {
-        List<Transaction> allTransactions = transactionRepository.findAll();
-        return allTransactions.stream()
-            .collect(Collectors.groupingBy(
-                Transaction::getType,
-                Collectors.counting()
-            ));
-    }
-    
-    public Map<LocalDate, BigDecimal> getTransactionVolumeByDateRange(LocalDate start, LocalDate end) {
-        LocalDateTime startDateTime = start.atStartOfDay();
-        LocalDateTime endDateTime = end.plusDays(1).atStartOfDay();
-        
-        List<Transaction> transactions = transactionRepository.findByDateBetween(startDateTime, endDateTime);
-        
-        // Tüm günlerin listesini oluştur
-        Map<LocalDate, BigDecimal> volumeByDate = new LinkedHashMap<>();
-        LocalDate current = start;
-        while (!current.isAfter(end)) {
-            volumeByDate.put(current, BigDecimal.ZERO);
-            current = current.plusDays(1);
-        }
-        
-        // İşlem tutarlarını ilgili tarihlere ekle
-        for (Transaction transaction : transactions) {
-            LocalDate transactionDate = transaction.getDate().toLocalDate();
-            volumeByDate.put(
-                transactionDate, 
-                volumeByDate.getOrDefault(transactionDate, BigDecimal.ZERO).add(transaction.getAmount())
-            );
-        }
-        
-        return volumeByDate;
-    }
-    
-    public Map<Customer, Long> getTransactionCountByCustomer(int limit) {
-        List<Transaction> transactions = transactionRepository.findByCustomerIsNotNullOrderByDateDesc();
-        
-        Map<Customer, Long> countByCustomer = transactions.stream()
-            .filter(t -> t.getCustomer() != null)
-            .collect(Collectors.groupingBy(
-                Transaction::getCustomer,
-                Collectors.counting()
-            ));
-        
-        // En çok işlem yapılan müşterileri bul
-        return countByCustomer.entrySet().stream()
-            .sorted(Map.Entry.<Customer, Long>comparingByValue().reversed())
+        return transactionRepository.findAllByOrderByDateDesc().stream()
             .limit(limit)
-            .collect(Collectors.toMap(
-                Map.Entry::getKey,
-                Map.Entry::getValue,
-                (e1, e2) -> e1,
-                LinkedHashMap::new
-            ));
+            .collect(Collectors.toList());
     }
     
-    public List<Transaction> findTransactionsByDateRange(LocalDateTime start, LocalDateTime end) {
-        return transactionRepository.findByDateBetween(start, end);
+    /**
+     * En yüksek tutarlı işlemleri döndürür
+     */
+    public List<Transaction> findHighestAmountTransactions(int limit) {
+        return transactionRepository.findAll().stream()
+            .sorted((t1, t2) -> t2.getAmount().compareTo(t1.getAmount()))
+            .limit(limit)
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Günlük işlem toplamını hesaplar
+     */
+    public BigDecimal calculateDailyTotal() {
+        LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
+        LocalDateTime endOfDay = LocalDate.now().plusDays(1).atStartOfDay();
+        
+        return transactionRepository.findAll().stream()
+            .filter(t -> t.getDate().isAfter(startOfDay) && t.getDate().isBefore(endOfDay))
+            .map(Transaction::getAmount)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    // İki tarih arasındaki tüm işlemleri getiren metod
+    public List<Transaction> findAllTransactionsBetweenDates(LocalDateTime startDate, LocalDateTime endDate) {
+        return transactionRepository.findByDateBetween(startDate, endDate, Pageable.unpaged()).getContent();
+    }
+    
+    // Filtreleme parametrelerine göre işlemleri getiren metod
+    public List<Transaction> findFilteredTransactions(String type, String startDate, String endDate, 
+                                                      Double minAmount, Double maxAmount) {
+        // Tarihleri dönüştür
+        LocalDateTime start = startDate != null && !startDate.isEmpty() ? 
+            LocalDate.parse(startDate).atStartOfDay() : LocalDate.of(2000, 1, 1).atStartOfDay();
+        LocalDateTime end = endDate != null && !endDate.isEmpty() ? 
+            LocalDate.parse(endDate).atTime(23, 59, 59) : LocalDateTime.now().plusYears(10);
+        
+        // Tüm işlemleri getir ve manuel filtrele
+        List<Transaction> transactions;
+        
+        if (type != null && !type.isEmpty()) {
+            transactions = transactionRepository.findByTypeAndDateBetween(
+                TransactionType.valueOf(type), start, end, Pageable.unpaged()).getContent();
+        } else {
+            transactions = transactionRepository.findByDateBetween(start, end, Pageable.unpaged()).getContent();
+        }
+        
+        // Tutar filtresi varsa uygula
+        if (minAmount != null || maxAmount != null) {
+            BigDecimal min = minAmount != null ? new BigDecimal(minAmount) : BigDecimal.ZERO;
+            BigDecimal max = maxAmount != null ? new BigDecimal(maxAmount) : new BigDecimal("999999999");
+            
+            transactions = transactions.stream()
+                .filter(t -> t.getAmount().compareTo(min) >= 0 && t.getAmount().compareTo(max) <= 0)
+                .collect(Collectors.toList());
+        }
+        
+        return transactions;
     }
 }

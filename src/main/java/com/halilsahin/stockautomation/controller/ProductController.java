@@ -96,6 +96,14 @@ public class ProductController {
                              @RequestParam double price,
                              @RequestParam double purchasePrice,
                              RedirectAttributes redirectAttributes) {
+        
+        // Barkod validasyonu
+        if (barcode == null || barcode.length() != 13 || !barcode.matches("\\d{13}")) {
+            redirectAttributes.addFlashAttribute("error", 
+                "Barkod numarası tam olarak 13 rakamdan oluşmalıdır!");
+            return "redirect:/products";
+        }
+        
         Product existingProduct = productService.findByBarcode(barcode);
         if (existingProduct != null) {
             redirectAttributes.addFlashAttribute("error", 
@@ -106,6 +114,7 @@ public class ProductController {
         Product product = new Product();
         product.setName(name);
         product.setBarcode(barcode);
+        product.setDescription(description);
         product.setStock(stock);
         product.setUnitType(unitType);
         product.setPrice(BigDecimal.valueOf(price));
@@ -173,6 +182,16 @@ public class ProductController {
     @PostMapping("/update")
     public String updateProduct(@ModelAttribute("product") Product product, RedirectAttributes redirectAttributes) {
         try {
+            // Barkod validasyonu
+            if (product.getBarcode() == null || 
+                product.getBarcode().length() != 13 || 
+                !product.getBarcode().matches("\\d{13}")) {
+                
+                redirectAttributes.addFlashAttribute("error", 
+                    "Barkod numarası tam olarak 13 rakamdan oluşmalıdır!");
+                return "redirect:/products/edit/" + product.getId();
+            }
+            
             Product existingProduct = productService.findById(product.getId());
             // Diğer alanları güncelle
             existingProduct.setName(product.getName());
@@ -186,7 +205,7 @@ public class ProductController {
             productService.updateProduct(existingProduct);
             redirectAttributes.addFlashAttribute("success", "Ürün başarıyla güncellendi.");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Ürün güncellenirken bir hata oluştu.");
+            redirectAttributes.addFlashAttribute("error", "Ürün güncellenirken bir hata oluştu: " + e.getMessage());
         }
         return "redirect:/products";
     }

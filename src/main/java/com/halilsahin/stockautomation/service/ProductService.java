@@ -5,6 +5,7 @@ import com.halilsahin.stockautomation.enums.TransactionType;
 import com.halilsahin.stockautomation.exception.InsufficientStockException;
 import com.halilsahin.stockautomation.exception.ProductNotFoundException;
 import com.halilsahin.stockautomation.repository.ProductRepository;
+import com.halilsahin.stockautomation.repository.TransactionRepository;
 import com.halilsahin.stockautomation.transaction.TransactionContext;
 import com.halilsahin.stockautomation.transaction.TransactionHandler;
 import com.halilsahin.stockautomation.transaction.TransactionHandlerFactory;
@@ -26,12 +27,15 @@ import java.util.stream.Collectors;
 public class ProductService {
     private final ProductRepository productRepository;
     private final TransactionHandlerFactory transactionHandlerFactory;
+    private final TransactionRepository transactionRepository;
 
     @Autowired
     public ProductService(ProductRepository productRepository,
-                        TransactionHandlerFactory transactionHandlerFactory) {
+                        TransactionHandlerFactory transactionHandlerFactory,
+                        TransactionRepository transactionRepository) {
         this.productRepository = productRepository;
         this.transactionHandlerFactory = transactionHandlerFactory;
+        this.transactionRepository = transactionRepository;
     }
 
     public List<Product> findAll() {
@@ -53,8 +57,15 @@ public class ProductService {
         productRepository.save(existingProduct);
     }
 
+    @Transactional
     public void deleteById(Long id) {
-        productRepository.deleteById(id);
+        Product product = findById(id);
+        if (product != null) {
+            // Önce ürünle ilişkili tüm işlemleri sil
+            transactionRepository.deleteByProduct(product);
+            // Sonra ürünü sil
+            productRepository.deleteById(id);
+        }
     }
 
     public List<Product> findAllByOrderByIdDesc() {

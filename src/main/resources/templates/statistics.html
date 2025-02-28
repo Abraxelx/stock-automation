@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="tr">
+<head>
+  <title>İstatistikler</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .stat-card {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      transition: transform 0.3s;
+    }
+    .stat-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    }
+    .chart-container {
+      position: relative;
+      margin: auto;
+      height: 300px;
+      width: 100%;
+    }
+    .stat-value {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+    .stat-title {
+      font-size: 1rem;
+      color: #6c757d;
+      margin-bottom: 0;
+    }
+    .stat-icon {
+      font-size: 2.5rem;
+      opacity: 0.2;
+      position: absolute;
+      right: 20px;
+      top: 20px;
+    }
+    .growth-indicator {
+      font-size: 0.9rem;
+      padding: 2px 8px;
+      border-radius: 20px;
+      margin-left: 10px;
+    }
+    .growth-positive {
+      background-color: rgba(40, 167, 69, 0.1);
+      color: #28a745;
+    }
+    .growth-negative {
+      background-color: rgba(220, 53, 69, 0.1);
+      color: #dc3545;
+    }
+    .filter-section {
+      background: #f8f9fa;
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body class="bg-light">
+<div th:insert="~{fragments/navbar.html :: navbar}"></div>
+
+<div class="container mt-5">
+  <div class="row mb-4">
+    <div class="col-12">
+      <h2 class="mb-4"><i class="fas fa-chart-line"></i> İstatistik Paneli</h2>
+      
+      <!-- Filtreleme Bölümü -->
+      <div class="filter-section">
+        <form id="dateFilterForm" method="get" class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Tarih Aralığı</label>
+            <div class="btn-group w-100" role="group">
+              <input type="radio" class="btn-check" name="period" id="period1M" value="1M" th:checked="${period == '1M'}">
+              <label class="btn btn-outline-primary" for="period1M">Son 1 Ay</label>
+              
+              <input type="radio" class="btn-check" name="period" id="period3M" value="3M" th:checked="${period == '3M'}">
+              <label class="btn btn-outline-primary" for="period3M">Son 3 Ay</label>
+              
+              <input type="radio" class="btn-check" name="period" id="period6M" value="6M" th:checked="${period == '6M'}">
+              <label class="btn btn-outline-primary" for="period6M">Son 6 Ay</label>
+              
+              <input type="radio" class="btn-check" name="period" id="period1Y" value="1Y" th:checked="${period == '1Y'}">
+              <label class="btn btn-outline-primary" for="period1Y">Son 1 Yıl</label>
+              
+              <input type="radio" class="btn-check" name="period" id="periodCustom" value="custom" th:checked="${period == 'custom'}">
+              <label class="btn btn-outline-primary" for="periodCustom">Özel</label>
+            </div>
+          </div>
+          
+          <div class="col-md-6" id="customDateInputs" th:style="${period == 'custom'} ? 'display:flex' : 'display:none'">
+            <div class="row g-2">
+              <div class="col-md-6">
+                <label class="form-label">Başlangıç Tarihi</label>
+                <input type="date" name="startDate" class="form-control" th:value="${startDate}">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Bitiş Tarihi</label>
+                <input type="date" name="endDate" class="form-control" th:value="${endDate}">
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-12 text-end">
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-filter"></i> Filtrele
+            </button>
+            <a href="/statistics" class="btn btn-secondary">
+              <i class="fas fa-sync"></i> Sıfırla
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Özet Kartları -->
+  <div class="row mb-4">
+    <!-- Toplam Satış Tutarı -->
+    <div class="col-md-3 mb-4">
+      <div class="stat-card">
+        <i class="fas fa-shopping-cart stat-icon text-primary"></i>
+        <p class="stat-title">Toplam Satış Tutarı</p>
+        <div class="d-flex align-items-center">
+          <div class="stat-value text-primary">
+            <span th:text="${#numbers.formatDecimal(statistics.totalSalesAmount, 0, 'COMMA', 2, 'POINT')}">0.00</span>
+            <small>TL</small>
+          </div>
+          <span class="growth-indicator" 
+                th:classappend="${statistics.salesGrowth >= 0 ? 'growth-positive' : 'growth-negative'}"
+                th:text="${statistics.salesGrowth >= 0 ? '+' : ''} + ${#numbers.formatDecimal(statistics.salesGrowth, 0, 'COMMA', 1, 'POINT')} + '%'">
+            +0.0%
+          </span>
+        </div>
+        <small class="text-muted">Önceki döneme göre</small>
+      </div>
+    </div>
+    
+    <!-- Toplam İşlem Sayısı -->
+    <div class="col-md-3 mb-4">
+      <div class="stat-card">
+        <i class="fas fa-exchange-alt stat-icon text-success"></i>
+        <p class="stat-title">Toplam İşlem Sayısı</p>
+        <div class="stat-value text-success" th:text="${statistics.totalTransactions}">0</div>
+        <small class="text-muted">
+          <span th:text="${statistics.totalSalesTransactions}">0</span> Satış,
+          <span th:text="${statistics.totalStockInTransactions}">0</span> Stok Girişi
+        </small>
+      </div>
+    </div>
+    
+    <!-- Alacak Borç Durumu -->
+    <div class="col-md-3 mb-4">
+      <div class="stat-card">
+        <i class="fas fa-file-invoice-dollar stat-icon text-warning"></i>
+        <p class="stat-title">Alacak Durumu</p>
+        <div class="stat-value text-warning">
+          <span th:text="${#numbers.formatDecimal(statistics.totalReceivableAmount, 0, 'COMMA', 2, 'POINT')}">0.00</span>
+          <small>TL</small>
+        </div>
+        <small class="text-muted">Toplam alacak tutarı</small>
+      </div>
+    </div>
+    
+    <!-- Borç Durumu -->
+    <div class="col-md-3 mb-4">
+      <div class="stat-card">
+        <i class="fas fa-hand-holding-usd stat-icon text-danger"></i>
+        <p class="stat-title">Borç Durumu</p>
+        <div class="stat-value text-danger">
+          <span th:text="${#numbers.formatDecimal(statistics.totalPayableAmount, 0, 'COMMA', 2, 'POINT')}">0.00</span>
+          <small>TL</small>
+        </div>
+        <small class="text-muted">Toplam borç tutarı</small>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Grafikler -->
+  <div class="row mb-5">
+    <!-- Aylık Satış Grafiği -->
+    <div class="col-lg-6 mb-4">
+      <div class="stat-card">
+        <h5 class="card-title mb-4">Aylık Satış Trendi</h5>
+        <div class="chart-container">
+          <canvas id="monthlySalesChart"></canvas>
+        </div>
+      </div>
+    </div>
+    
+    <!-- İşlem Tipi Dağılımı -->
+    <div class="col-lg-6 mb-4">
+      <div class="stat-card">
+        <h5 class="card-title mb-4">İşlem Tipi Dağılımı</h5>
+        <div class="chart-container">
+          <canvas id="transactionTypeChart"></canvas>
+        </div>
+      </div>
+    </div>
+    
+    <!-- En Çok Satan Ürünler -->
+    <div class="col-lg-6 mb-4">
+      <div class="stat-card">
+        <h5 class="card-title mb-4">En Çok Satan Ürünler</h5>
+        <div class="chart-container">
+          <canvas id="topProductsChart"></canvas>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Günlük Satış Trendi -->
+    <div class="col-lg-6 mb-4">
+      <div class="stat-card">
+        <h5 class="card-title mb-4">Günlük Satış Trendi (Son 30 Gün)</h5>
+        <div class="chart-container">
+          <canvas id="dailySalesChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script th:inline="javascript">
+  document.addEventListener('DOMContentLoaded', function() {
+    // Özel tarih aralığı seçildiğinde tarih inputlarını göster
+    const periodRadios = document.querySelectorAll('input[name="period"]');
+    const customDateInputs = document.getElementById('customDateInputs');
+    
+    periodRadios.forEach(radio => {
+      radio.addEventListener('change', function() {
+        if (this.value === 'custom') {
+          customDateInputs.style.display = 'flex';
+        } else {
+          customDateInputs.style.display = 'none';
+        }
+      });
+    });
+    
+    // ---------------
+    // Grafik verileri
+    // ---------------
+    const chartData = /*[[${chartData}]]*/ {};
+    
+    // Grafikler için renk paleti
+    const colors = [
+      'rgba(54, 162, 235, 0.7)',
+      'rgba(255, 99, 132, 0.7)',
+      'rgba(75, 192, 192, 0.7)',
+      'rgba(255, 159, 64, 0.7)',
+      'rgba(153, 102, 255, 0.7)',
+      'rgba(255, 205, 86, 0.7)',
+      'rgba(201, 203, 207, 0.7)',
+      'rgba(54, 162, 235, 0.5)',
+      'rgba(255, 99, 132, 0.5)',
+      'rgba(75, 192, 192, 0.5)'
+    ];
+    
+    // -----------------
+    // Aylık Satış Trendi
+    // -----------------
+    const monthlySalesCtx = document.getElementById('monthlySalesChart').getContext('2d');
+    new Chart(monthlySalesCtx, {
+      type: 'line',
+      data: {
+        labels: chartData.monthlySalesLabels,
+        datasets: [{
+          label: 'Aylık Satış Tutarı (TL)',
+          data: chartData.monthlySalesData,
+          borderColor: colors[0],
+          backgroundColor: colors[0].replace('0.7', '0.1'),
+          borderWidth: 2,
+          pointBackgroundColor: colors[0],
+          tension: 0.3,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                let label = context.dataset.label || '';
+                if (label) {
+                  label += ': ';
+                }
+                if (context.parsed.y !== null) {
+                  label += new Intl.NumberFormat('tr-TR', { 
+                    style: 'currency', 
+                    currency: 'TRY',
+                    minimumFractionDigits: 2
+                  }).format(context.parsed.y);
+                }
+                return label;
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return value.toLocaleString('tr-TR') + ' TL';
+              }
+            }
+          }
+        }
+      }
+    });
+    
+    // -----------------
+    // İşlem Tipi Dağılımı
+    // -----------------
+    const transactionTypesMap = {
+      'SALE': 'SATIŞ',
+      'STOCK_IN': 'STOK GİRİŞİ',
+      'STOCK_OUT': 'STOK ÇIKIŞI',
+      'DEBT_IN': 'BORÇ ALMA',
+      'DEBT_OUT': 'BORÇ VERME',
+      'DEBT_PAYMENT': 'BORÇ ÖDEMESİ',
+      'DEBT_COLLECTION': 'ALACAK TAHSİLATI',
+      'CUSTOMER_ADD': 'MÜŞTERİ KAYDI'
+    };
+    
+    const translatedLabels = chartData.transactionTypeLabels.map(label => 
+      transactionTypesMap[label] || label
+    );
+    
+    const transactionTypeCtx = document.getElementById('transactionTypeChart').getContext('2d');
+    new Chart(transactionTypeCtx, {
+      type: 'doughnut',
+      data: {
+        labels: translatedLabels,
+        datasets: [{
+          data: chartData.transactionTypeData,
+          backgroundColor: colors,
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'right',
+          }
+        }
+      }
+    });
+    
+    // -----------------
+    // En Çok Satan Ürünler
+    // -----------------
+    const topProductsCtx = document.getElementById('topProductsChart').getContext('2d');
+    new Chart(topProductsCtx, {
+      type: 'bar',
+      data: {
+        labels: chartData.topProductLabels,
+        datasets: [{
+          label: 'Satış Tutarı (TL)',
+          data: chartData.topProductData,
+          backgroundColor: colors,
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: 'y',
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                let label = context.dataset.label || '';
+                if (label) {
+                  label += ': ';
+                }
+                if (context.parsed.x !== null) {
+                  label += new Intl.NumberFormat('tr-TR', { 
+                    style: 'currency', 
+                    currency: 'TRY',
+                    minimumFractionDigits: 2
+                  }).format(context.parsed.x);
+                }
+                return label;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return value.toLocaleString('tr-TR') + ' TL';
+              }
+            }
+          }
+        }
+      }
+    });
+    
+    // -----------------
+    // Günlük Satış Trendi
+    // -----------------
+    const dailySalesCtx = document.getElementById('dailySalesChart').getContext('2d');
+    new Chart(dailySalesCtx, {
+      type: 'bar',
+      data: {
+        labels: chartData.dailySalesLabels,
+        datasets: [{
+          label: 'Günlük Satış Tutarı (TL)',
+          data: chartData.dailySalesData,
+          backgroundColor: colors[2],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                let label = context.dataset.label || '';
+                if (label) {
+                  label += ': ';
+                }
+                if (context.parsed.y !== null) {
+                  label += new Intl.NumberFormat('tr-TR', { 
+                    style: 'currency', 
+                    currency: 'TRY',
+                    minimumFractionDigits: 2
+                  }).format(context.parsed.y);
+                }
+                return label;
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return value.toLocaleString('tr-TR') + ' TL';
+              }
+            }
+          }
+        }
+      }
+    });
+  });
+</script>
+</body>
+</html> 
