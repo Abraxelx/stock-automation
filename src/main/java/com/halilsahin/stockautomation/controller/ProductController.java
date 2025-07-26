@@ -8,11 +8,13 @@ import com.halilsahin.stockautomation.enums.UnitType;
 import com.halilsahin.stockautomation.repository.ProductRepository;
 import com.halilsahin.stockautomation.repository.TransactionRepository;
 import com.halilsahin.stockautomation.service.ProductService;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -85,6 +87,32 @@ public class ProductController {
             errorResponse.put("error", e.getMessage());
             return errorResponse;
         }
+    }
+
+    @GetMapping(value = "/get-product-by-barcode", produces = "application/json")
+    @ResponseBody
+    public Map<String, Object> getProductByBarcode(
+            @RequestParam String barcode,
+            @RequestParam(name = "api_key", required = true) String apiKey) {
+        
+        Map<String, Object> response = new HashMap<>();
+        
+        // API Key doğrulaması
+        if (!apiKey.equals("stock_automation_api_key_2023")) {
+            response.put("error", "Geçersiz API anahtarı.");
+            return response;
+        }
+        
+        Product product = productService.findByBarcode(barcode);
+        if (product != null) {
+            response.put("success", true);
+            response.put("product", product);
+        } else {
+            response.put("success", false);
+            response.put("message", "Ürün bulunamadı.");
+        }
+        
+        return response;
     }
 
     @PostMapping

@@ -88,8 +88,7 @@ public class SaleService {
             
             // Stok kontrolü
             if (product.getStock() < totalQuantity) {
-                throw new InsufficientStockException("Yetersiz stok! En fazla " + 
-                    product.getStock() + " adet ekleyebilirsiniz.");
+                throw new InsufficientStockException("Yetersiz stok! (" + product.getName() + " - Barkod: " + product.getBarcode() + ") En fazla " + product.getStock() + " adet ekleyebilirsiniz.");
             }
             
             // Mevcut ürünün miktarını güncelle
@@ -100,7 +99,7 @@ public class SaleService {
 
         // Yeni ürün için stok kontrolü
         if (product.getStock() < quantity) {
-            throw new InsufficientStockException("Yetersiz stok!");
+            throw new InsufficientStockException("Yetersiz stok! (" + product.getName() + " - Barkod: " + product.getBarcode() + ") Mevcut stok: " + product.getStock());
         }
 
         SaleItem saleItem = new SaleItem();

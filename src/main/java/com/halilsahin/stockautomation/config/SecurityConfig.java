@@ -19,7 +19,7 @@ public class SecurityConfig {
         String salesPath = bundle.getString("sales.path");
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers( "/", "/css/**", "/js/**", "/images/**").permitAll()
+                        .requestMatchers( "/", "/css/**", "/js/**", "/images/**","/products/get-product-by-barcode").permitAll()
                         .requestMatchers(loginPath).permitAll()
                         .requestMatchers(salesPath).authenticated()
                         .anyRequest().authenticated()

@@ -64,7 +64,7 @@ public class ProductService {
             // Önce ürünle ilişkili tüm işlemleri sil
             transactionRepository.deleteByProduct(product);
             // Sonra ürünü sil
-            productRepository.deleteById(id);
+        productRepository.deleteById(id);
         }
     }
 
@@ -115,7 +115,7 @@ public class ProductService {
 
     public List<Product> findAllByStockValue() {
         return productRepository.findAll().stream()
-            .sorted((p1, p2) -> {
+                .sorted((p1, p2) -> {
                 BigDecimal value1 = p1.getPrice() != null ? 
                     p1.getPrice().multiply(BigDecimal.valueOf(p1.getStock())) : 
                     BigDecimal.ZERO;
@@ -123,13 +123,13 @@ public class ProductService {
                     p2.getPrice().multiply(BigDecimal.valueOf(p2.getStock())) : 
                     BigDecimal.ZERO;
                 return value2.compareTo(value1);
-            })
-            .collect(Collectors.toList());
+                })
+                .collect(Collectors.toList());
     }
 
     public void decreaseStock(Product product, int quantity) {
         if (product.getStock() < quantity) {
-            throw new InsufficientStockException("Yetersiz stok! Mevcut stok: " + product.getStock());
+            throw new InsufficientStockException("Yetersiz stok! (" + product.getName() + " - Barkod: " + product.getBarcode() + ") Mevcut stok: " + product.getStock());
         }
         product.setStock(product.getStock() - quantity);
         productRepository.save(product);

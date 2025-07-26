@@ -63,9 +63,12 @@ public class SalesController {
         try {
             SaleItem saleItem = saleService.addItemToSale(barcode, quantity, saleItems);
             
-            // Eğer yeni ürün eklendiyse listeye ekle
+            // Eğer yeni ürün eklendiyse listenin başına ekle, varsa en üste taşı
             if (!saleItems.contains(saleItem)) {
-                saleItems.add(saleItem);
+                saleItems.add(0, saleItem);
+            } else {
+                saleItems.remove(saleItem);
+                saleItems.add(0, saleItem);
             }
             
             // Toplam tutarı yeniden hesapla

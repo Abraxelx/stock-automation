@@ -48,7 +48,7 @@ public class Transaction {
     private Debt debt;
 
     // İşlem detayları
-    @Column(length = 1000)
+    @Column
     private String description;
 
     @Column(name = "previous_balance")

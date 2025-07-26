@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'com.halilsahin'
-version = '2.1.0'
+version = '2.3.0'
 
 java {
     toolchain {
@@ -29,6 +29,7 @@ repositories {
 }
 
 dependencies {
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
